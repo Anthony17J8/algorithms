@@ -8,7 +8,7 @@
    Legal use of the software provides receipt of a license from the right holder only.
  */
 
-package org.example.yandex.algorithms_1_0.lesson2;
+package org.example.yandex.algorithms_1_0.lesson3;
 
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Timeout;
@@ -22,22 +22,19 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.OutputStreamWriter;
 import java.util.Arrays;
+import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
-import static org.junit.jupiter.api.Assertions.assertArrayEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
-public class F {
+public class A {
 
     public static void main(String[] args) throws Exception {
         TestHelper fs = new TestHelper();
-        int n = fs.nextInt();
-        int[] in = Arrays.stream(fs.next().split(" ")).mapToInt(Integer::parseInt).toArray();
-        int[] result = getResult(in);
-        fs.write(result.length);
-        fs.write("\n");
-        if (result.length > 1) {
-            fs.writeAll(result);
-        }
+
+        int[] in = fs.readStringAsArray();
+        fs.write(getResult(in));
         fs.close();
     }
 
@@ -45,57 +42,24 @@ public class F {
     @ParameterizedTest
     @MethodSource(value = "source")
     @Timeout(1)
-    void test(int[] in, int[] out) {
-        assertArrayEquals(out, getResult(in));
+    void test(int[] in, int out) throws Exception {
+        assertEquals(out, getResult(in));
     }
 
     private static Stream<Arguments> source() {
         return Stream.of(
-                Arguments.of(new int[]{1, 2, 3, 4, 5, 4, 3, 2, 1}, new int[]{}),
-                Arguments.of(new int[]{1, 2, 1, 2, 2}, new int[]{1, 2, 1}),
-                Arguments.of(new int[]{1, 2, 3, 4, 5}, new int[]{4, 3, 2, 1}),
-                Arguments.of(new int[]{1, 2, 3, 4, 5, 4, 3}, new int[]{2, 1}),
-                Arguments.of(new int[]{1, 2, 3, 4, 5, 5, 5}, new int[]{4, 3, 2, 1}),
-                Arguments.of(new int[]{1, 2, 3, 4, 5, 1, 5}, new int[]{4, 3, 2, 1}),
-                Arguments.of(new int[]{1, 2, 3, 4, 5, 1}, new int[]{5, 4, 3, 2, 1}),
-                Arguments.of(new int[]{1, 2}, new int[]{1}),
-                Arguments.of(new int[]{1, 2, 1}, new int[]{}),
-                Arguments.of(new int[]{1, 2, 2}, new int[]{1}),
-                Arguments.of(new int[]{1, 1}, new int[]{}),
-                Arguments.of(new int[]{1, 2, 3, 1}, new int[]{3, 2, 1}),
-                Arguments.of(new int[]{1, 2, 1, 1, 2, 2, 1}, new int[]{1, 2, 1}),
-                Arguments.of(new int[]{1, 2, 1, 3, 4, 2, 2, 1}, new int[]{2, 2, 4, 3, 1, 2, 1})
+                Arguments.of(new int[]{1, 2, 3, 2, 1}, 3),
+                Arguments.of(new int[]{}, 0),
+                Arguments.of(new int[]{0}, 1),
+                Arguments.of(new int[]{1, 2, 3, 4, 5, 1, 2, 1, 2, 7, 3}, 6),
+                Arguments.of(TestHelper.generate(1_000_000, 1), 1),
+                Arguments.of(TestHelper.range(0, 1_000_000), 1_000_000)
+
         );
     }
 
-    private static int[] getResult(int[] in) {
-        if (in.length < 2) {
-            return new int[]{};
-        }
-
-        int endIdx = in.length - 1;
-        int startIdx = 0;
-        int to = -1;
-        while (startIdx < endIdx) {
-            if (in[startIdx] != in[endIdx]) {
-                to = startIdx;
-                endIdx = in.length - 1;
-            } else {
-                endIdx--;
-            }
-            startIdx++;
-        }
-        if (to == -1) {
-            return new int[]{};
-        }
-        int[] result = new int[to + 1];
-        int idx = 0;
-        while (to >= 0) {
-            result[idx] = in[to];
-            idx++;
-            to--;
-        }
-        return result;
+    private static int getResult(int[] in) {
+        return Arrays.stream(in).boxed().collect(Collectors.toSet()).size();
     }
 
     private static class TestHelper {
@@ -111,13 +75,28 @@ public class F {
             out.write(s);
         }
 
-        void write(int i) throws IOException {
+        void write(long i) throws IOException {
             out.write(String.valueOf(i));
         }
 
-        void writeAll(int[] i) throws IOException {
-            for (int el : i) {
+        void writeAll(long[] i) throws IOException {
+            for (long el : i) {
                 out.write(el + " ");
+            }
+        }
+
+        void writeAll(String[] w) throws IOException {
+            for (String b : w) {
+                out.write(b + " ");
+            }
+        }
+
+        void writeOneByOne(char[][] in) throws IOException {
+            for (int i = 0; i < in.length; i++) {
+                for (int j = 0; j < in[0].length; j++) {
+                    out.write(in[i][j] + " ");
+                }
+                out.write("\n");
             }
         }
 
@@ -129,8 +108,24 @@ public class F {
             }
         }
 
+        int[] readStringAsArray() {
+            try {
+                return Arrays.stream(in.readLine().split(" ")).mapToInt(Integer::parseInt).toArray();
+            } catch (IOException e) {
+                throw new RuntimeException(e);
+            }
+        }
+
         int nextInt() {
             return Integer.parseInt(next());
+        }
+
+        long nextLong() {
+            return Long.parseLong(next());
+        }
+
+        double nextDouble() {
+            return Double.parseDouble(next());
         }
 
         void close() throws Exception {
@@ -145,6 +140,10 @@ public class F {
                 in[i] = num;
             }
             return in;
+        }
+
+        public static int[] range(int from, int to) {
+            return IntStream.range(from, to).toArray();
         }
 
         public static int[] generateRandom(int size) {
