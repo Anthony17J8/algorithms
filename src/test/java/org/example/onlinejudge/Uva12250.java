@@ -22,23 +22,37 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.OutputStreamWriter;
 import java.util.Arrays;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
-public class Uva11044 {
+public class Uva12250 {
+    static Map<String, String> dict = new HashMap<>();
+
+    static {
+        dict.put("HELLO", "ENGLISH");
+        dict.put("HOLA", "SPANISH");
+        dict.put("HALLO", "GERMAN");
+        dict.put("BONJOUR", "FRENCH");
+        dict.put("CIAO", "ITALIAN");
+        dict.put("ZDRAVSTVUJTE", "RUSSIAN");
+    }
 
     public static void main(String[] args) throws Exception {
         TestHelper fs = new TestHelper();
-        int t = fs.nextInt();
-        int idx = 0;
-        while (t > idx) {
-            int[] in = fs.readStringAsIntArray();
-            fs.write(getResult(in[0], in[1]));
-            fs.newLine();
+        String term;
+        StringBuilder sb = new StringBuilder();
+        int idx = 1;
+        while (!(term = fs.next()).equals("#")) {
+            sb.append("Case ").append(idx).append(": ")
+                    .append(getResult(term))
+                    .append("\n");
             idx++;
         }
+        fs.write(sb.toString());
         fs.close();
     }
 
@@ -46,25 +60,20 @@ public class Uva11044 {
     @ParameterizedTest
     @MethodSource(value = "source")
     @Timeout(1)
-    void test(int n, int m, int out) throws Exception {
-        assertEquals(out, getResult(n, m));
+    void test(String in, String out) throws Exception {
+        assertEquals(out, getResult(in));
     }
 
     private static Stream<Arguments> source() {
         return Stream.of(
-                Arguments.of(6, 6, 4),
-                Arguments.of(7, 7, 4),
-                Arguments.of(9, 8, 6),
-                Arguments.of(9, 13, 12)
+                Arguments.of(new int[]{1000, 2000, 3000}, 2000),
+                Arguments.of(new int[]{3000, 2500, 1500}, 2500),
+                Arguments.of(new int[]{1500, 1200, 1800}, 1500)
         );
     }
 
-    private static int getResult(int n, int m) {
-        int z = Math.max(n - 2, 6);
-        double a = Math.ceil(z / 3.);
-        int c = Math.max(m - 2, 6);
-        double b = Math.ceil(c / 3.);
-        return (int)(a * b);
+    private static String getResult(String term) {
+        return dict.getOrDefault(term, "UNKNOWN");
     }
 
     private static class TestHelper {

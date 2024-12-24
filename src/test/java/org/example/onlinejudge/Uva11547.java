@@ -27,18 +27,17 @@ import java.util.stream.Stream;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
-public class Uva11044 {
+public class Uva11547 {
 
     public static void main(String[] args) throws Exception {
         TestHelper fs = new TestHelper();
         int t = fs.nextInt();
-        int idx = 0;
-        while (t > idx) {
-            int[] in = fs.readStringAsIntArray();
-            fs.write(getResult(in[0], in[1]));
-            fs.newLine();
-            idx++;
+        StringBuilder stringBuilder = new StringBuilder();
+        while (t-- > 0) {
+            stringBuilder.append(getResult(fs.nextInt()))
+                    .append("\n");
         }
+        fs.write(stringBuilder.toString());
         fs.close();
     }
 
@@ -46,25 +45,21 @@ public class Uva11044 {
     @ParameterizedTest
     @MethodSource(value = "source")
     @Timeout(1)
-    void test(int n, int m, int out) throws Exception {
-        assertEquals(out, getResult(n, m));
+    void test(int n, int out) throws Exception {
+        assertEquals(out, getResult(n));
     }
 
     private static Stream<Arguments> source() {
         return Stream.of(
-                Arguments.of(6, 6, 4),
-                Arguments.of(7, 7, 4),
-                Arguments.of(9, 8, 6),
-                Arguments.of(9, 13, 12)
+                Arguments.of(637, 1),
+                Arguments.of(-120, 3),
+                Arguments.of(0, 6),
+                Arguments.of(1000, 6)
         );
     }
 
-    private static int getResult(int n, int m) {
-        int z = Math.max(n - 2, 6);
-        double a = Math.ceil(z / 3.);
-        int c = Math.max(m - 2, 6);
-        double b = Math.ceil(c / 3.);
-        return (int)(a * b);
+    private static int getResult(int input) {
+        return Math.abs((input * 567 / 9 + 7492) * 235 / 47 - 498) / 10 % 10;
     }
 
     private static class TestHelper {

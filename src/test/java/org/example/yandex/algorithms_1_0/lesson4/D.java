@@ -8,7 +8,7 @@
    Legal use of the software provides receipt of a license from the right holder only.
  */
 
-package org.example.onlinejudge;
+package org.example.yandex.algorithms_1_0.lesson4;
 
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Timeout;
@@ -21,50 +21,68 @@ import java.io.BufferedWriter;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.OutputStreamWriter;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.Arrays;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Objects;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 
-public class Uva11044 {
+public class D {
 
     public static void main(String[] args) throws Exception {
         TestHelper fs = new TestHelper();
-        int t = fs.nextInt();
-        int idx = 0;
-        while (t > idx) {
-            int[] in = fs.readStringAsIntArray();
-            fs.write(getResult(in[0], in[1]));
-            fs.newLine();
-            idx++;
-        }
+        int n = fs.nextInt();
+        int[] c = fs.readStringAsIntArray();
+        int k = fs.nextInt();
+        int[] p = fs.readStringAsIntArray();
+        String[] result = getResult(c, p);
+        fs.writeAllMultiline(result);
         fs.close();
     }
+
 
     @DisplayName("{0}")
     @ParameterizedTest
     @MethodSource(value = "source")
     @Timeout(1)
-    void test(int n, int m, int out) throws Exception {
-        assertEquals(out, getResult(n, m));
+    void test(int[] n, int[] k, String[] out) throws Exception {
+        assertArrayEquals(out, getResult(n, k));
     }
 
     private static Stream<Arguments> source() {
         return Stream.of(
-                Arguments.of(6, 6, 4),
-                Arguments.of(7, 7, 4),
-                Arguments.of(9, 8, 6),
-                Arguments.of(9, 13, 12)
+                Arguments.of(new int[]{1},
+                        new int[]{1},
+                        new String[]{null, "NO"}),
+                Arguments.of(new int[]{1, 50, 3, 4, 3},
+                        new int[]{1, 2, 3, 4, 5, 1, 3, 3, 4, 5, 5, 5, 5, 5, 4, 5},
+                        new String[]{null, "YES", "NO", "NO", "NO", "YES"}),
+                Arguments.of(new int[]{2, 3, 1, 2},
+                        new int[]{1, 2, 2, 3, 3, 1},
+                        new String[]{null, "NO", "NO", "YES", "NO"})
         );
     }
 
-    private static int getResult(int n, int m) {
-        int z = Math.max(n - 2, 6);
-        double a = Math.ceil(z / 3.);
-        int c = Math.max(m - 2, 6);
-        double b = Math.ceil(c / 3.);
-        return (int)(a * b);
+    private static String[] getResult(int[] n, int[] k) {
+        Map<Integer, Integer> overall = new HashMap<>();
+        for (int btn : k) {
+            if (overall.computeIfPresent(btn, (key, val) -> val + 1) == null) {
+                overall.put(btn, 1);
+            }
+        }
+
+        String[] s = new String[n.length + 1];
+        for (int i = 1; i < s.length; i++) {
+            if (n[i - 1] >= overall.getOrDefault(i, 0)) {
+                s[i] = "NO";
+            } else s[i] = "YES";
+        }
+        return s;
     }
 
     private static class TestHelper {
@@ -76,13 +94,13 @@ public class Uva11044 {
             out = new BufferedWriter(new OutputStreamWriter(System.out));
         }
 
-        boolean ready() throws IOException {
-            return in.ready();
+        Stream<String> readFromFile() throws IOException {
+            return Files.lines(Path.of("src/test/java/org/example/yandex/algorithms_1_0/lesson4/input.txt"));
+//            return Files.lines(Path.of("input.txt"));
         }
 
         void write(String s) throws IOException {
             out.write(s);
-            out.flush();
         }
 
         void write(long i) throws IOException {
@@ -116,6 +134,12 @@ public class Uva11044 {
             for (String b : w) {
                 out.write(b + " ");
             }
+        }
+
+        void writeAllMultiline(String[] s) {
+            Arrays.stream(s)
+                    .filter(Objects::nonNull)
+                    .forEach(System.out::println);
         }
 
         void writeOneByOne(char[][] in) throws IOException {

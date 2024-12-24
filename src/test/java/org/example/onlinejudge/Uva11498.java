@@ -27,18 +27,23 @@ import java.util.stream.Stream;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
-public class Uva11044 {
+public class Uva11498 {
+
+    static String divisa = "divisa", NW = "NO", NE = "NE", SE = "SE", SW = "SO";
 
     public static void main(String[] args) throws Exception {
         TestHelper fs = new TestHelper();
-        int t = fs.nextInt();
-        int idx = 0;
-        while (t > idx) {
-            int[] in = fs.readStringAsIntArray();
-            fs.write(getResult(in[0], in[1]));
-            fs.newLine();
-            idx++;
+        int k;
+        StringBuilder sb = new StringBuilder();
+        while ((k = fs.nextInt()) != 0) {
+            int idx = k;
+            int[] center = fs.readStringAsIntArray();
+            while (idx-- > 0) {
+                int[] p = fs.readStringAsIntArray();
+                sb.append(getResult(center, p)).append("\n");
+            }
         }
+        fs.write(sb.toString());
         fs.close();
     }
 
@@ -46,25 +51,39 @@ public class Uva11044 {
     @ParameterizedTest
     @MethodSource(value = "source")
     @Timeout(1)
-    void test(int n, int m, int out) throws Exception {
+    void test(int[] n, int[] m, String out) throws Exception {
         assertEquals(out, getResult(n, m));
     }
 
     private static Stream<Arguments> source() {
         return Stream.of(
-                Arguments.of(6, 6, 4),
-                Arguments.of(7, 7, 4),
-                Arguments.of(9, 8, 6),
-                Arguments.of(9, 13, 12)
+                Arguments.of(new int[]{2, 1}, new int[]{10, 10}, NE),
+                Arguments.of(new int[]{2, 1}, new int[]{-10, 1}, divisa),
+                Arguments.of(new int[]{2, 1}, new int[]{0, 33}, NW),
+                Arguments.of(new int[]{-1000, -1000}, new int[]{-1000, -1000}, divisa),
+                Arguments.of(new int[]{-1000, -1000}, new int[]{0, 0}, NE),
+                Arguments.of(new int[]{-1000, -1000}, new int[]{-2000, -10000}, SW),
+                Arguments.of(new int[]{-1000, -1000}, new int[]{-999, -1001}, SE)
         );
     }
 
-    private static int getResult(int n, int m) {
-        int z = Math.max(n - 2, 6);
-        double a = Math.ceil(z / 3.);
-        int c = Math.max(m - 2, 6);
-        double b = Math.ceil(c / 3.);
-        return (int)(a * b);
+    private static String getResult(int[] center, int[] p) {
+        int cx = center[0];
+        int cy = center[1];
+        int x = p[0];
+        int y = p[1];
+        if (x == cx || y == cy) {
+            return divisa;
+        }
+        if (x > cx && y > cy) {
+            return NE;
+        } else if (x < cx && y < cy) {
+            return SW;
+        } else if (x < cx) {
+            return NW;
+        } else {
+            return SE;
+        }
     }
 
     private static class TestHelper {

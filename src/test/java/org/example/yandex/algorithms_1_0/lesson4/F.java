@@ -8,7 +8,7 @@
    Legal use of the software provides receipt of a license from the right holder only.
  */
 
-package org.example.onlinejudge;
+package org.example.yandex.algorithms_1_0.lesson4;
 
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Timeout;
@@ -21,50 +21,82 @@ import java.io.BufferedWriter;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.OutputStreamWriter;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.Arrays;
+import java.util.Map;
+import java.util.Objects;
+import java.util.TreeMap;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-
-public class Uva11044 {
+public class F {
 
     public static void main(String[] args) throws Exception {
         TestHelper fs = new TestHelper();
-        int t = fs.nextInt();
-        int idx = 0;
-        while (t > idx) {
-            int[] in = fs.readStringAsIntArray();
-            fs.write(getResult(in[0], in[1]));
-            fs.newLine();
-            idx++;
-        }
+        Map<String, Map<String, Long>> table = new TreeMap<>();
+
+        fs.readFromFile()
+                .forEach(s -> {
+                    String[] in = s.split(" ");
+                    getResult(in, table);
+                });
+        //                .sorted(Map.Entry.comparingByKey())
+        table.forEach((key1, value1) -> {
+            try {
+                fs.write(key1 + ":\n");
+                //                                .sorted()
+                value1
+                        .forEach((key, value) -> {
+                            try {
+                                fs.write(key + " " + value + "\n");
+                            } catch (IOException e) {
+                                throw new RuntimeException(e);
+                            }
+                        });
+
+            } catch (IOException e) {
+                throw new RuntimeException(e);
+            }
+        });
+
         fs.close();
     }
+
 
     @DisplayName("{0}")
     @ParameterizedTest
     @MethodSource(value = "source")
     @Timeout(1)
-    void test(int n, int m, int out) throws Exception {
-        assertEquals(out, getResult(n, m));
+    void test(int[][] size, long out) throws Exception {
+//        assertEquals(out, getResult(size));
     }
 
     private static Stream<Arguments> source() {
         return Stream.of(
-                Arguments.of(6, 6, 4),
-                Arguments.of(7, 7, 4),
-                Arguments.of(9, 8, 6),
-                Arguments.of(9, 13, 12)
+                Arguments.of(new int[][]{
+                        {3, 1}, {2, 2}, {3, 3}
+                }, 5),
+                Arguments.of(new int[][]{
+                        {1, 2}
+                }, 2)
         );
     }
 
-    private static int getResult(int n, int m) {
-        int z = Math.max(n - 2, 6);
-        double a = Math.ceil(z / 3.);
-        int c = Math.max(m - 2, 6);
-        double b = Math.ceil(c / 3.);
-        return (int)(a * b);
+    private static void getResult(String[] in, Map<String, Map<String, Long>> table) {
+        String name = in[0];
+        String item = in[1];
+        Long total = Long.parseLong(in[2]);
+        if (table.computeIfPresent(name, (k, v) -> {
+            if (v.computeIfPresent(item, (k1, v1) -> v1 + total) == null) {
+                v.put(item, total);
+            }
+            return v;
+        }) == null) {
+            Map<String, Long> m = new TreeMap<>();
+            m.put(item, total);
+            table.put(name, m);
+        }
     }
 
     private static class TestHelper {
@@ -76,13 +108,17 @@ public class Uva11044 {
             out = new BufferedWriter(new OutputStreamWriter(System.out));
         }
 
-        boolean ready() throws IOException {
+        boolean isReady() throws Exception {
             return in.ready();
+        }
+
+        Stream<String> readFromFile() throws IOException {
+            return Files.lines(Path.of("src/test/java/org/example/yandex/algorithms_1_0/lesson4/input.txt"));
+//            return Files.lines(Path.of("input.txt"));
         }
 
         void write(String s) throws IOException {
             out.write(s);
-            out.flush();
         }
 
         void write(long i) throws IOException {
@@ -116,6 +152,12 @@ public class Uva11044 {
             for (String b : w) {
                 out.write(b + " ");
             }
+        }
+
+        void writeAllMultiline(String[] s) {
+            Arrays.stream(s)
+                    .filter(Objects::nonNull)
+                    .forEach(System.out::println);
         }
 
         void writeOneByOne(char[][] in) throws IOException {

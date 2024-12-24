@@ -27,18 +27,22 @@ import java.util.stream.Stream;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
-public class Uva11044 {
+public class Uva11727 {
 
     public static void main(String[] args) throws Exception {
         TestHelper fs = new TestHelper();
-        int t = fs.nextInt();
-        int idx = 0;
-        while (t > idx) {
+        int n = fs.nextInt();
+        StringBuilder stringBuilder = new StringBuilder();
+        int idx = 1;
+        while (n-- > 0) {
             int[] in = fs.readStringAsIntArray();
-            fs.write(getResult(in[0], in[1]));
-            fs.newLine();
+            stringBuilder
+                    .append("Case ").append(idx).append(": ")
+                    .append(getResult(in))
+                    .append("\n");
             idx++;
         }
+        fs.write(stringBuilder.toString());
         fs.close();
     }
 
@@ -46,25 +50,28 @@ public class Uva11044 {
     @ParameterizedTest
     @MethodSource(value = "source")
     @Timeout(1)
-    void test(int n, int m, int out) throws Exception {
-        assertEquals(out, getResult(n, m));
+    void test(int[] in, int out) throws Exception {
+        assertEquals(out, getResult(in));
     }
 
     private static Stream<Arguments> source() {
         return Stream.of(
-                Arguments.of(6, 6, 4),
-                Arguments.of(7, 7, 4),
-                Arguments.of(9, 8, 6),
-                Arguments.of(9, 13, 12)
+                Arguments.of(new int[]{1000, 2000, 3000}, 2000),
+                Arguments.of(new int[]{3000, 2500, 1500}, 2500),
+                Arguments.of(new int[]{1500, 1200, 1800}, 1500)
         );
     }
 
-    private static int getResult(int n, int m) {
-        int z = Math.max(n - 2, 6);
-        double a = Math.ceil(z / 3.);
-        int c = Math.max(m - 2, 6);
-        double b = Math.ceil(c / 3.);
-        return (int)(a * b);
+    private static int getResult(int[] input) {
+        int max = Math.max(input[0], input[1]);
+        int max2 = Math.min(input[0], input[1]);
+        if (max < input[2]) {
+            max2 = max;
+            max = input[2];
+        } else if (max2 < input[2]) {
+            max2 = input[2];
+        }
+        return max2;
     }
 
     private static class TestHelper {

@@ -8,7 +8,7 @@
    Legal use of the software provides receipt of a license from the right holder only.
  */
 
-package org.example.onlinejudge;
+package org.example.yandex.algorithms_1_0.lesson4;
 
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Timeout;
@@ -21,50 +21,121 @@ import java.io.BufferedWriter;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.OutputStreamWriter;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.Arrays;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Objects;
+import java.util.TreeMap;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-
-public class Uva11044 {
+public class G {
+    final static String DEPOSIT = "DEPOSIT", INCOME = "INCOME", BALANCE = "BALANCE", TRANSFER = "TRANSFER", WITHDRAW = "WITHDRAW";
+    static Map<String, Long> accounts = new HashMap<>();
+    static TestHelper fs = new TestHelper();
 
     public static void main(String[] args) throws Exception {
-        TestHelper fs = new TestHelper();
-        int t = fs.nextInt();
-        int idx = 0;
-        while (t > idx) {
-            int[] in = fs.readStringAsIntArray();
-            fs.write(getResult(in[0], in[1]));
-            fs.newLine();
-            idx++;
-        }
+
+        fs.readFromFile()
+                .forEach(s -> {
+                    String[] in = s.split(" ");
+                    String op = in[0];
+                    try {
+                        processOperation(op, in);
+                    } catch (Exception e) {
+                        throw new RuntimeException(e);
+                    }
+                });
         fs.close();
+    }
+
+    private static void processOperation(String op, String[] input) throws Exception {
+        switch (op) {
+            case DEPOSIT -> deposit(input[1], Long.parseLong(input[2]));
+            case INCOME -> income(Long.parseLong(input[1]));
+            case BALANCE -> showBalance(input[1]);
+            case TRANSFER -> transfer(input[1], input[2], Long.parseLong(input[3]));
+            case WITHDRAW -> withdraw(input[1], Long.parseLong(input[2]));
+            default -> throw new UnsupportedOperationException();
+        }
+
+    }
+
+    private static void withdraw(String name, Long balance) {
+        if (accounts.computeIfPresent(name, (k, v) -> v - balance) == null) {
+            accounts.put(name, -balance);
+        }
+    }
+
+    private static void transfer(String from, String to, Long balance) {
+        if (!accounts.containsKey(from)) {
+            accounts.put(from, 0L);
+        }
+        if (!accounts.containsKey(to)) {
+            accounts.put(to, 0L);
+        }
+        accounts.compute(from, (k, v) -> v - balance);
+        accounts.compute(to, (k, v) -> v + balance);
+    }
+
+    private static void showBalance(String name) throws Exception {
+        if (accounts.containsKey(name)) {
+            fs.write(accounts.get(name));
+        } else {
+            fs.write("ERROR");
+        }
+        fs.newLine();
+    }
+
+    private static void income(Long income) {
+        accounts.forEach((k, v) -> {
+            if (v > 0) {
+                accounts.compute(k, (k1, v1) -> (long) (v1 + v1 * (income / 100.)));
+            }
+        });
+    }
+
+    private static void deposit(String name, Long balance) {
+        if (accounts.computeIfPresent(name, (k, v) -> v + balance) == null) {
+            accounts.put(name, balance);
+        }
     }
 
     @DisplayName("{0}")
     @ParameterizedTest
     @MethodSource(value = "source")
     @Timeout(1)
-    void test(int n, int m, int out) throws Exception {
-        assertEquals(out, getResult(n, m));
+    void test(int[][] size, long out) throws Exception {
+//        assertEquals(out, getResult(size));
     }
 
     private static Stream<Arguments> source() {
         return Stream.of(
-                Arguments.of(6, 6, 4),
-                Arguments.of(7, 7, 4),
-                Arguments.of(9, 8, 6),
-                Arguments.of(9, 13, 12)
+                Arguments.of(new int[][]{
+                        {3, 1}, {2, 2}, {3, 3}
+                }, 5),
+                Arguments.of(new int[][]{
+                        {1, 2}
+                }, 2)
         );
     }
 
-    private static int getResult(int n, int m) {
-        int z = Math.max(n - 2, 6);
-        double a = Math.ceil(z / 3.);
-        int c = Math.max(m - 2, 6);
-        double b = Math.ceil(c / 3.);
-        return (int)(a * b);
+    private static void getResult(String[] in, Map<String, Map<String, Long>> table) {
+        String name = in[0];
+        String item = in[1];
+        Long total = Long.parseLong(in[2]);
+        if (table.computeIfPresent(name, (k, v) -> {
+            if (v.computeIfPresent(item, (k1, v1) -> v1 + total) == null) {
+                v.put(item, total);
+            }
+            return v;
+        }) == null) {
+            Map<String, Long> m = new TreeMap<>();
+            m.put(item, total);
+            table.put(name, m);
+        }
     }
 
     private static class TestHelper {
@@ -76,13 +147,17 @@ public class Uva11044 {
             out = new BufferedWriter(new OutputStreamWriter(System.out));
         }
 
-        boolean ready() throws IOException {
+        boolean isReady() throws Exception {
             return in.ready();
+        }
+
+        Stream<String> readFromFile() throws IOException {
+            return Files.lines(Path.of("src/test/java/org/example/yandex/algorithms_1_0/lesson4/input.txt"));
+//            return Files.lines(Path.of("input.txt"));
         }
 
         void write(String s) throws IOException {
             out.write(s);
-            out.flush();
         }
 
         void write(long i) throws IOException {
@@ -116,6 +191,12 @@ public class Uva11044 {
             for (String b : w) {
                 out.write(b + " ");
             }
+        }
+
+        void writeAllMultiline(String[] s) {
+            Arrays.stream(s)
+                    .filter(Objects::nonNull)
+                    .forEach(System.out::println);
         }
 
         void writeOneByOne(char[][] in) throws IOException {

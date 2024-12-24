@@ -8,7 +8,7 @@
    Legal use of the software provides receipt of a license from the right holder only.
  */
 
-package org.example.onlinejudge;
+package org.example.yandex.algorithms_1_0.lesson4;
 
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Timeout;
@@ -21,24 +21,26 @@ import java.io.BufferedWriter;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.OutputStreamWriter;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.Arrays;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Objects;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
-public class Uva11044 {
+public class H {
+    static TestHelper fs = new TestHelper();
 
     public static void main(String[] args) throws Exception {
-        TestHelper fs = new TestHelper();
-        int t = fs.nextInt();
-        int idx = 0;
-        while (t > idx) {
-            int[] in = fs.readStringAsIntArray();
-            fs.write(getResult(in[0], in[1]));
-            fs.newLine();
-            idx++;
-        }
+        fs.readStringAsIntArray();
+
+        String in = fs.next();
+        String txt = fs.next();
+        fs.write(getResult(in, txt));
         fs.close();
     }
 
@@ -46,25 +48,66 @@ public class Uva11044 {
     @ParameterizedTest
     @MethodSource(value = "source")
     @Timeout(1)
-    void test(int n, int m, int out) throws Exception {
-        assertEquals(out, getResult(n, m));
+    void test(String g, String s, int out) throws Exception {
+        assertEquals(out, getResult(g, s));
     }
 
     private static Stream<Arguments> source() {
         return Stream.of(
-                Arguments.of(6, 6, 4),
-                Arguments.of(7, 7, 4),
-                Arguments.of(9, 8, 6),
-                Arguments.of(9, 13, 12)
+                Arguments.of("cAda", "AbrAcadAbRa", 2),
+                Arguments.of("Adac", "AbrAcadAbRa", 2),
+                Arguments.of("AdacA", "AbrAcadAbRa", 1),
+                Arguments.of("AdacA", "AbrAcadAAbRa", 2),
+                Arguments.of("AdacA", "AbrAcadAAAbRa", 2),
+                Arguments.of("aaaa", "aaaaaaa", 4),
+                Arguments.of("aaaa", "vaavv", 0),
+                Arguments.of("abc", "cba", 1),
+                Arguments.of("abc", "cbacbAbc", 3),
+                Arguments.of("MexIcoMe", "MexIcoMexIcoMezFILbMexIcoMezjMexIcoMezSMexIcoMezgMexIcoMezMexIcoMezMexIcoMezmAMexIcoMezMexIcoMezMexIcoMezufygMexIcoMexIcoMezmoIzFuRMexIcoMezMexIcoMezMexIcoMezYMexIcoMezMexIcoMezHtMexIcoMexIcoMezMexIcoMexIcoMez", 22),
+                Arguments.of("MexIcoMe", "MexIcoMexIcoMe", 2)
+
         );
     }
 
-    private static int getResult(int n, int m) {
-        int z = Math.max(n - 2, 6);
-        double a = Math.ceil(z / 3.);
-        int c = Math.max(m - 2, 6);
-        double b = Math.ceil(c / 3.);
-        return (int)(a * b);
+    private static int getResult(String g, String s) {
+        Map<Character, Integer> cache = new HashMap<>();
+        fillCache(g, cache);
+        int l = 0, r = 0;
+        int result = 0;
+
+        char[] chars = s.toCharArray();
+        while (r < s.length()) {
+            if (cache.containsKey(chars[r])) {
+                int newVal = cache.compute(chars[r], (k, v) -> v - 1);
+                if (newVal == 0) {
+                    cache.remove(chars[r]);
+                }
+                r++;
+            } else {
+                fillCache(g, cache);
+                l++;
+                r = l;
+            }
+            if (cache.isEmpty()) {
+                result++;
+                l++;
+                r = l;
+                fillCache(g, cache);
+            }
+        }
+
+        return result;
+    }
+
+    private static void fillCache(String in, Map<Character, Integer> cache) {
+        if (in.length() != cache.size()) {
+            cache.clear();
+            for (char c : in.toCharArray()) {
+                if (cache.computeIfPresent(c, (k, v) -> v + 1) == null) {
+                    cache.put(c, 1);
+                }
+            }
+        }
     }
 
     private static class TestHelper {
@@ -76,16 +119,24 @@ public class Uva11044 {
             out = new BufferedWriter(new OutputStreamWriter(System.out));
         }
 
-        boolean ready() throws IOException {
+        boolean isReady() throws Exception {
             return in.ready();
+        }
+
+        Stream<String> readFromFile() throws IOException {
+            return Files.lines(Path.of("src/test/java/org/example/yandex/algorithms_1_0/lesson4/input.txt"));
+//            return Files.lines(Path.of("input.txt"));
         }
 
         void write(String s) throws IOException {
             out.write(s);
-            out.flush();
         }
 
-        void write(long i) throws IOException {
+        void write(long l) throws IOException {
+            out.write(String.valueOf(l));
+        }
+
+        void write(int i) throws IOException {
             out.write(String.valueOf(i));
         }
 
@@ -116,6 +167,12 @@ public class Uva11044 {
             for (String b : w) {
                 out.write(b + " ");
             }
+        }
+
+        void writeAllMultiline(String[] s) {
+            Arrays.stream(s)
+                    .filter(Objects::nonNull)
+                    .forEach(System.out::println);
         }
 
         void writeOneByOne(char[][] in) throws IOException {
