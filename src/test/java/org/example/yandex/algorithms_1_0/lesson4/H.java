@@ -27,6 +27,7 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
+import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
@@ -40,7 +41,7 @@ public class H {
 
         String in = fs.next();
         String txt = fs.next();
-        fs.write(getResult(in, txt));
+        fs.write(getResultSlow(in, txt));
         fs.close();
     }
 
@@ -49,7 +50,7 @@ public class H {
     @MethodSource(value = "source")
     @Timeout(1)
     void test(String g, String s, int out) throws Exception {
-        assertEquals(out, getResult(g, s));
+        assertEquals(out, getResultFast(g, s));
     }
 
     private static Stream<Arguments> source() {
@@ -63,13 +64,53 @@ public class H {
                 Arguments.of("aaaa", "vaavv", 0),
                 Arguments.of("abc", "cba", 1),
                 Arguments.of("abc", "cbacbAbc", 3),
-                Arguments.of("MexIcoMe", "MexIcoMexIcoMezFILbMexIcoMezjMexIcoMezSMexIcoMezgMexIcoMezMexIcoMezMexIcoMezmAMexIcoMezMexIcoMezMexIcoMezufygMexIcoMexIcoMezmoIzFuRMexIcoMezMexIcoMezMexIcoMezYMexIcoMezMexIcoMezHtMexIcoMexIcoMezMexIcoMexIcoMez", 22),
-                Arguments.of("MexIcoMe", "MexIcoMexIcoMe", 2)
+                Arguments.of("MexIcoMe",
+                        "MexIcoMexIcoMezFILbMexIcoMezjMexIcoMezSMexIcoMezgMexIcoMezMexIcoMezMexIcoMezmAMexIcoMezMexIcoMezMexIcoMezufygMexIcoMexIcoMezmoIzFuRMexIcoMezMexIcoMezMexIcoMezYMexIcoMezMexIcoMezHtMexIcoMexIcoMezMexIcoMexIcoMez",
+                        22),
+                Arguments.of("MexIcoMe", "MexIcoMexIcoMe", 2),
+                Arguments.of("MexMe", "MexMexMeMexMe", 7),
+                Arguments.of(TestHelper.generate(3000), TestHelper.generate(3_000_000), 0)
 
         );
     }
 
-    private static int getResult(String g, String s) {
+    private static int getResultFast(String w, String s) {
+        int result = 0;
+        Map<Character, Integer> mapW = getDict(w);
+        int l = 0;
+        int r = w.length() - 1;
+        Map<Character, Integer> mapS = getDict(s.substring(l, r));
+
+        while (r < s.length()) {
+            if (mapS.computeIfPresent(s.charAt(r), (k, v) -> v + 1) == null) {
+                mapS.put(s.charAt(r), 1);
+            }
+            if (isWord(mapW, mapS)) {
+                result++;
+            }
+
+            int newVal = mapS.computeIfPresent(s.charAt(l), (k, v) -> v - 1);
+            if (newVal == 0) {
+                mapS.remove(s.charAt(l));
+            }
+            l++;
+            r++;
+        }
+        return result;
+    }
+
+    private static boolean isWord(Map<Character, Integer> mapW, Map<Character, Integer> mapS) {
+        boolean result = true;
+        for (Map.Entry<Character, Integer> e : mapW.entrySet()) {
+            if (!e.getValue().equals(mapS.get(e.getKey()))) {
+                result = false;
+                break;
+            }
+        }
+        return result;
+    }
+
+    private static int getResultSlow(String g, String s) {
         Map<Character, Integer> cache = new HashMap<>();
         fillCache(g, cache);
         int l = 0, r = 0;
@@ -109,6 +150,17 @@ public class H {
             }
         }
     }
+
+    private static Map<Character, Integer> getDict(String in) {
+        Map<Character, Integer> m = new HashMap<>();
+        for (char c : in.toCharArray()) {
+            if (m.computeIfPresent(c, (k, v) -> v + 1) == null) {
+                m.put(c, 1);
+            }
+        }
+        return m;
+    }
+
 
     private static class TestHelper {
         BufferedReader in;
@@ -237,10 +289,9 @@ public class H {
         }
 
         public static String generate(int size) {
-            return Stream.iterate("A", s -> s + "A")
+            return Stream.generate(() -> "Me")
                     .limit(size)
-                    .reduce((first, sec) -> sec)
-                    .get();
+                    .collect(Collectors.joining());
         }
 
         public static int[] range(int from, int to) {
