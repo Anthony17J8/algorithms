@@ -8,7 +8,7 @@
    Legal use of the software provides receipt of a license from the right holder only.
  */
 
-package org.example.yandex.algorithms_1_0.lesson6;
+package org.example.yandex.algorithms_1_0.lesson8;
 
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Timeout;
@@ -30,97 +30,106 @@ import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
-import static org.junit.jupiter.api.Assertions.assertArrayEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
-public class J {
+public class B {
     static TestHelper fs = new TestHelper();
+    static int seed = 2025;
 
     public static void main(String[] args) throws Exception {
-        int[] in = fs.readStringAsIntArray();
-        int n = in[0];
-        int l = in[1];
-        int[][] arr = new int[n][l];
-        for (int i = 0; i < n; i++) {
-            arr[i] = fs.readStringAsIntArray();
-        }
-        fs.writeAll(gerResultSlow(arr), '\n');
+        fs.write(getResult(fs.readStringAsIntArray()));
         fs.close();
+
     }
 
     @DisplayName("{0}")
     @ParameterizedTest
     @MethodSource(value = "source")
     @Timeout(1)
-    void test(int[][] in, int[] out) throws Exception {
-        assertArrayEquals(out, gerResultSlow(in));
+    void test(int[] in, int out) throws Exception {
+        assertEquals(out, getResult(in));
     }
 
     private static Stream<Arguments> source() {
         return Stream.of(
-                Arguments.of(new int[][]{
-                        {1, 4, 7, 10, 13, 16},
-                        {0, 2, 5, 9, 14, 20},
-                        {1, 7, 16, 16, 21, 22}
-                }, new int[]{7, 10, 9}), Arguments.of(new int[][]{
-                        {1, 2, 5},
-                        {2, 3, 4},
-                        {9, 10, 11},
-                        {1, 10, 11},
-                        {2, 5, 8}
-                }, new int[]{2, 5, 2, 2, 4, 3, 3, 10, 8, 5})
+                Arguments.of(new int[]{7, 3, 2, 1, 9, 5, 4, 6, 8}, 4)
         );
     }
 
-    private static int[] getResult(int[][] arr) {
-        return new int[]{};
+
+    private static int getResult(int[] in) {
+        Tree tree = new Tree(in.length);
+        for (int j = 0; j < in.length; j++) {
+            int i = in[j];
+            if (i == 0 && j == in.length - 1) {
+                break;
+            }
+            tree.addNode(i);
+        }
+        return tree.maxHeight;
     }
 
-    private static int[] gerResultSlow(int[][] arr) {
-        int[] result = new int[getSize(arr.length)];
-        int idx = 0;
-        for (int i = 0; i < arr.length; i++) {
-            for (int j = i + 1; j < arr.length; j++) {
-                result[idx++] = getNum(arr[i], arr[j]);
+    static class Tree {
+        Integer[][] elements;
+        int maxHeight = 0;
+        Integer root;
+        int currentIdx = 0;
+        //0 - index
+        //1 - key
+        //2 - left
+        //3 - right
+        //4 - lvl
+
+        public Tree(int size) {
+            this.elements = new Integer[size][5];
+            for (int i = 0; i < size; i++) {
+                elements[i] = new Integer[]{i, null, null, null, null};
             }
         }
-        return result;
-    }
 
-    private static int getSize(int s) {
-        int r = 0;
-        while (s-- > 0) {
-            r += s;
-        }
-        return r;
-    }
+        public void addNode(int key) {
+            if (root == null) {
+                root = currentIdx;
+                elements[currentIdx][1] = key;
+                elements[currentIdx][4] = 1;
+                maxHeight = Math.max(maxHeight, 1);
+                currentIdx++;
 
-    private static int getNum(int[] a1, int[] a2) {
-        int idx1 = 0;
-        int idx2 = 0;
-        int idx = 0;
-        int[] sum = new int[a1.length + a2.length];
-        while (idx1 < a1.length && idx2 < a2.length) {
-            if (a1[idx1] > a2[idx2]) {
-                sum[idx++] = a2[idx2++];
-            } else if (a1[idx1] < a2[idx2]) {
-                sum[idx++] = a1[idx1++];
             } else {
-                sum[idx++] = a2[idx2++];
-                sum[idx++] = a1[idx1++];
+                Integer parent = root;
+                while (parent != null) {
+                    if (elements[parent][1] > key) {
+                        if (elements[parent][2] == null) {
+                            elements[currentIdx][1] = key;
+                            int curlvl = elements[parent][4] + 1;
+                            elements[currentIdx][4] = curlvl;
+                            maxHeight = Math.max(maxHeight, curlvl);
+                            elements[parent][2] = currentIdx;
+                            currentIdx++;
+                            break;
+                        } else {
+                            parent = elements[parent][2];
+                        }
+                    } else if (elements[parent][1] < key) {
+                        if (elements[parent][3] == null) {
+                            elements[currentIdx][1] = key;
+                            int curlvl = elements[parent][4] + 1;
+                            elements[currentIdx][4] = curlvl;
+                            maxHeight = Math.max(maxHeight, curlvl);
+                            elements[parent][3] = currentIdx;
+                            currentIdx++;
+                            break;
+                        } else {
+                            parent = elements[parent][3];
+                        }
+                    } else {
+                        break;
+                    }
+                }
             }
         }
-        if (idx1 < a1.length) {
-            for (int i = idx1; i < a1.length; i++) {
-                sum[idx++] = a1[i];
-            }
-        }
-        if (idx2 < a2.length) {
-            for (int i = idx2; i < a2.length; i++) {
-                sum[idx++] = a2[i];
-            }
-        }
-        return sum[a1.length - 1];
     }
+
 
     private static class TestHelper {
         BufferedReader in;
@@ -228,7 +237,7 @@ public class J {
 
         int[] readStringAsIntArray() {
             try {
-                return Arrays.stream(in.readLine().split(" ")).mapToInt(Integer::parseInt).toArray();
+                return Arrays.stream(in.readLine().split("\\s+")).mapToInt(Integer::parseInt).toArray();
             } catch (IOException e) {
                 throw new RuntimeException(e);
             }
@@ -293,13 +302,35 @@ public class J {
             return in;
         }
 
+        public static long[] generateRandomLong(int size) {
+            Random random = new Random(seed++);
+            long[] in = random.longs(1, 100).limit(size).toArray();
+            Arrays.sort(in);
+            return in;
+        }
+
         public static int[] range(int from, int to) {
             return IntStream.range(from, to).toArray();
         }
 
-        public static int[] generateRandom(int size) {
-            //todo
-            return new int[]{};
+        public static int[] generateRandomSorted(int size, int seed) {
+            Random random = new Random(seed);
+            int[] array = random.ints(1, 20).limit(size).toArray();
+            Arrays.sort(array);
+            return array;
+        }
+
+        public static int[] generateRandom(int size, int seed) {
+            Random random = new Random(seed);
+            return random.ints(1, 10).limit(size).toArray();
+        }
+
+        public static int[][] generateTwoDimensionalRandom(int row, int col) {
+            int[][] res = new int[row][col];
+            for (int i = 0; i < row; i++) {
+                res[i] = generateRandom(col, i);
+            }
+            return res;
         }
     }
 }

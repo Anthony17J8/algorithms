@@ -1,20 +1,4 @@
-/*
-   Copyright 2020 Russian Post
-   <p>
-   This source code is Russian Post Confidential Proprietary.
-   This software is protected by copyright. All rights and titles are reserved.
-   You shall not use, copy, distribute, modify, decompile, disassemble or reverse engineer the software.
-   Otherwise this violation would be treated by law and would be subject to legal prosecution.
-   Legal use of the software provides receipt of a license from the right holder only.
- */
-
-package org.example.yandex.algorithms_1_0.lesson6;
-
-import org.junit.jupiter.api.DisplayName;
-import org.junit.jupiter.api.Timeout;
-import org.junit.jupiter.params.ParameterizedTest;
-import org.junit.jupiter.params.provider.Arguments;
-import org.junit.jupiter.params.provider.MethodSource;
+package org.example.yandex.algorithms_1_0.lesson7;
 
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
@@ -23,103 +7,98 @@ import java.io.InputStreamReader;
 import java.io.OutputStreamWriter;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Comparator;
+import java.util.List;
 import java.util.Objects;
 import java.util.Random;
+import java.util.TreeSet;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
-import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 
-public class J {
+public class C {
     static TestHelper fs = new TestHelper();
+    static int start = -1, end = 1, point = 0;
+    static int seed = 2025;
 
     public static void main(String[] args) throws Exception {
+
         int[] in = fs.readStringAsIntArray();
-        int n = in[0];
-        int l = in[1];
-        int[][] arr = new int[n][l];
-        for (int i = 0; i < n; i++) {
-            arr[i] = fs.readStringAsIntArray();
-        }
-        fs.writeAll(gerResultSlow(arr), '\n');
+        int N = in[0];
+        int D = in[1];
+        int[] arr = fs.readStringAsIntArray();
+
+        Result result = getResult(arr, D);
+        fs.write(result.count);
+        fs.newLine();
+        fs.writeAll(result.arr);
         fs.close();
+
     }
 
-    @DisplayName("{0}")
-    @ParameterizedTest
-    @MethodSource(value = "source")
-    @Timeout(1)
-    void test(int[][] in, int[] out) throws Exception {
-        assertArrayEquals(out, gerResultSlow(in));
-    }
+    private static Result getResult(int[] in, int d) {
+        List<Event> events = new ArrayList<>(in.length);
+        int[] types = new int[in.length];
+        for (int i = 0; i < in.length; i++) {
+            events.add(new Event(in[i], -1, i));
+            events.add(new Event(in[i] + d, 1, i));
+        }
 
-    private static Stream<Arguments> source() {
-        return Stream.of(
-                Arguments.of(new int[][]{
-                        {1, 4, 7, 10, 13, 16},
-                        {0, 2, 5, 9, 14, 20},
-                        {1, 7, 16, 16, 21, 22}
-                }, new int[]{7, 10, 9}), Arguments.of(new int[][]{
-                        {1, 2, 5},
-                        {2, 3, 4},
-                        {9, 10, 11},
-                        {1, 10, 11},
-                        {2, 5, 8}
-                }, new int[]{2, 5, 2, 2, 4, 3, 3, 10, 8, 5})
-        );
-    }
+        Comparator<Event> eventComparator = Comparator.comparing(Event::number).thenComparing(Event::type);
+        events.sort(eventComparator);
 
-    private static int[] getResult(int[][] arr) {
-        return new int[]{};
-    }
-
-    private static int[] gerResultSlow(int[][] arr) {
-        int[] result = new int[getSize(arr.length)];
-        int idx = 0;
-        for (int i = 0; i < arr.length; i++) {
-            for (int j = i + 1; j < arr.length; j++) {
-                result[idx++] = getNum(arr[i], arr[j]);
+        TreeSet<Integer> typeL = new TreeSet<>();
+        int maxTypes = 0;
+        for (int i = 0; i < events.size(); i++) {
+            Event e = events.get(i);
+            if (e.type == -1) {
+                if (typeL.isEmpty()) {
+                    maxTypes++;
+                    typeL.add(maxTypes);
+                }
+                Integer first = typeL.first();
+                types[e.idx] = first;
+                typeL.remove(first);
+            } else if (e.type == 1) {
+                typeL.add(types[e.idx]);
             }
         }
-        return result;
+
+        return new Result(maxTypes, types);
     }
 
-    private static int getSize(int s) {
-        int r = 0;
-        while (s-- > 0) {
-            r += s;
+
+    static class Event {
+        int number;
+        int type;
+        int idx;
+
+        public Event(int number, int type, int idx) {
+            this.number = number;
+            this.type = type;
+            this.idx = idx;
         }
-        return r;
+
+        int number() {
+            return number;
+        }
+
+        int type() {
+            return type;
+        }
     }
 
-    private static int getNum(int[] a1, int[] a2) {
-        int idx1 = 0;
-        int idx2 = 0;
-        int idx = 0;
-        int[] sum = new int[a1.length + a2.length];
-        while (idx1 < a1.length && idx2 < a2.length) {
-            if (a1[idx1] > a2[idx2]) {
-                sum[idx++] = a2[idx2++];
-            } else if (a1[idx1] < a2[idx2]) {
-                sum[idx++] = a1[idx1++];
-            } else {
-                sum[idx++] = a2[idx2++];
-                sum[idx++] = a1[idx1++];
-            }
+    static class Result {
+        int count;
+        int[] arr;
+
+        public Result(int count, int[] arr) {
+            this.count = count;
+            this.arr = arr;
         }
-        if (idx1 < a1.length) {
-            for (int i = idx1; i < a1.length; i++) {
-                sum[idx++] = a1[i];
-            }
-        }
-        if (idx2 < a2.length) {
-            for (int i = idx2; i < a2.length; i++) {
-                sum[idx++] = a2[i];
-            }
-        }
-        return sum[a1.length - 1];
     }
 
     private static class TestHelper {
@@ -228,7 +207,7 @@ public class J {
 
         int[] readStringAsIntArray() {
             try {
-                return Arrays.stream(in.readLine().split(" ")).mapToInt(Integer::parseInt).toArray();
+                return Arrays.stream(in.readLine().split("\\s+")).mapToInt(Integer::parseInt).toArray();
             } catch (IOException e) {
                 throw new RuntimeException(e);
             }
@@ -293,13 +272,35 @@ public class J {
             return in;
         }
 
+        public static long[] generateRandomLong(int size) {
+            Random random = new Random(seed++);
+            long[] in = random.longs(1, 100).limit(size).toArray();
+            Arrays.sort(in);
+            return in;
+        }
+
         public static int[] range(int from, int to) {
             return IntStream.range(from, to).toArray();
         }
 
-        public static int[] generateRandom(int size) {
-            //todo
-            return new int[]{};
+        public static int[] generateRandomSorted(int size, int seed) {
+            Random random = new Random(seed);
+            int[] array = random.ints(1, 20).limit(size).toArray();
+            Arrays.sort(array);
+            return array;
+        }
+
+        public static int[] generateRandom(int size, int seed) {
+            Random random = new Random(seed);
+            return random.ints(1, 10).limit(size).toArray();
+        }
+
+        public static int[][] generateTwoDimensionalRandom(int row, int col) {
+            int[][] res = new int[row][col];
+            for (int i = 0; i < row; i++) {
+                res[i] = generateRandom(col, i);
+            }
+            return res;
         }
     }
 }

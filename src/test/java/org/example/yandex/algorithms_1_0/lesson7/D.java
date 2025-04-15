@@ -8,7 +8,7 @@
    Legal use of the software provides receipt of a license from the right holder only.
  */
 
-package org.example.yandex.algorithms_1_0.lesson6;
+package org.example.yandex.algorithms_1_0.lesson7;
 
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Timeout;
@@ -23,103 +23,195 @@ import java.io.InputStreamReader;
 import java.io.OutputStreamWriter;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Comparator;
+import java.util.HashSet;
+import java.util.List;
 import java.util.Objects;
 import java.util.Random;
+import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
 import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 
-public class J {
+public class D {
     static TestHelper fs = new TestHelper();
+    static int start = -1, end = 1, point = 0;
+    static int seed = 2025;
+    static int timeOn = 5;
 
     public static void main(String[] args) throws Exception {
-        int[] in = fs.readStringAsIntArray();
-        int n = in[0];
-        int l = in[1];
-        int[][] arr = new int[n][l];
-        for (int i = 0; i < n; i++) {
-            arr[i] = fs.readStringAsIntArray();
+
+        int N = fs.nextInt();
+        int[][] arr = new int[N][];
+        int idx = 0;
+        while (N-- > 0) {
+            arr[idx++] = fs.readStringAsIntArray();
         }
-        fs.writeAll(gerResultSlow(arr), '\n');
+
+        fs.writeAll(getResult(arr));
         fs.close();
+
     }
 
     @DisplayName("{0}")
     @ParameterizedTest
     @MethodSource(value = "source")
     @Timeout(1)
-    void test(int[][] in, int[] out) throws Exception {
-        assertArrayEquals(out, gerResultSlow(in));
+    void test(int[][] in, int[] outArr) throws Exception {
+        assertArrayEquals(outArr, getResult(in));
     }
 
     private static Stream<Arguments> source() {
         return Stream.of(
                 Arguments.of(new int[][]{
-                        {1, 4, 7, 10, 13, 16},
-                        {0, 2, 5, 9, 14, 20},
-                        {1, 7, 16, 16, 21, 22}
-                }, new int[]{7, 10, 9}), Arguments.of(new int[][]{
-                        {1, 2, 5},
-                        {2, 3, 4},
-                        {9, 10, 11},
-                        {1, 10, 11},
-                        {2, 5, 8}
-                }, new int[]{2, 5, 2, 2, 4, 3, 3, 10, 8, 5})
+                        {1, 11},
+                        {1, 3},
+                        {6, 15},
+                        {1, 6}
+                }, new int[]{3, 1, 6}),
+                Arguments.of(new int[][]{
+                        {1, 10},
+                }, new int[]{1, 1, 6}),
+                Arguments.of(new int[][]{
+                        {1, 10},
+                        {11, 20},
+                        {21, 30}
+                }, new int[]{2, 5, 15}),
+                Arguments.of(new int[][]{
+                        {1, 10},
+                        {3, 8},
+                        {11, 16}
+                }, new int[]{3, 3, 11}),
+                Arguments.of(new int[][]{
+                        {1, 7},
+                        {3, 8},
+                        {11, 16}
+                }, new int[]{2, 2, 11}),
+                Arguments.of(new int[][]{
+                        {1, 20},
+                        {2, 6},
+                        {4, 10},
+                        {5, 10}
+                }, new int[]{3, 5, 25}),
+                Arguments.of(new int[][]{
+                        {1, 20},
+                        {2, 6},
+                        {5, 10},
+                        {5, 10}
+                }, new int[]{3, 5, 25}),
+                Arguments.of(new int[][]{
+                        {1, 10},
+                        {1, 6},
+                        {4, 13},
+                        {7, 14}
+                }, new int[]{4, 1, 8}),
+                Arguments.of(new int[][]{
+                        {1, 6},
+                        {1, 7},
+                        {1, 8},
+                        {1, 9}
+                }, new int[]{4, 1, 14}),
+                Arguments.of(new int[][]{
+                        {1, 6},
+                        {3, 10},
+                        {3, 10}
+                }, new int[]{2, 5, 15}),
+                Arguments.of(new int[][]{
+                                {1, 100},
+                                {80, 90},
+                                {80, 90}
+                        }, new int[]{3, 85, 105},
+                        Arguments.of(new int[][]{
+                                {1, 100},
+                                {1, 6},
+                                {1, 8},
+                                {1, 9},
+                                {1, 10},
+                                {50, 60},
+                                {51, 61},
+                                {51, 58}
+                        }, new int[]{8, 1, 53})
+                )
         );
     }
 
-    private static int[] getResult(int[][] arr) {
-        return new int[]{};
+
+    private static int[] getResult(int[][] in) {
+        Set<Integer> nowInShopClients = new HashSet<>();
+        int best1 = 0;
+        int best2 = 0;
+        int thebest = 0;
+
+        List<Event> events = new ArrayList<>();
+        for (int i = 0; i < in.length; i++) {
+            if (in[i][1] - in[i][0] >= 5) {
+                events.add(new Event(in[i][0], start, i));
+                events.add(new Event(in[i][1] - 5, end, i));
+            }
+
+        }
+        if (events.isEmpty()) {
+            return new int[]{0, 1, 6};
+        }
+
+        events.sort(Comparator.comparing(Event::number).thenComparing(Event::type));
+
+        for (int i = 0; i < events.size(); i++) {
+            Event event = events.get(i);
+            if (event.type == start) {
+                nowInShopClients.add(event.idx);
+                if (nowInShopClients.size() > thebest) {
+                    thebest = nowInShopClients.size();
+                    best1 = event.number;
+                    best2 = event.number + timeOn;
+                }
+            }
+
+            int counter = 0;
+            for (int j = i + 1; j < events.size(); j++) {
+                Event event2 = events.get(j);
+                if (event2.type == start && !nowInShopClients.contains(event2.idx)) {
+                    counter++;
+                }
+                if (event2.number - event.number >= timeOn && nowInShopClients.size() + counter > thebest) {
+                    thebest = nowInShopClients.size() + counter;
+                    best1 = event.number;
+                    best2 = event2.number;
+                }
+                if (event2.type == end && !nowInShopClients.contains(event2.idx)) {
+                    counter--;
+                }
+            }
+            if (event.type == end) {
+                nowInShopClients.remove(event.idx);
+            }
+        }
+        return new int[]{thebest, best1, best2};
     }
 
-    private static int[] gerResultSlow(int[][] arr) {
-        int[] result = new int[getSize(arr.length)];
-        int idx = 0;
-        for (int i = 0; i < arr.length; i++) {
-            for (int j = i + 1; j < arr.length; j++) {
-                result[idx++] = getNum(arr[i], arr[j]);
-            }
-        }
-        return result;
-    }
 
-    private static int getSize(int s) {
-        int r = 0;
-        while (s-- > 0) {
-            r += s;
-        }
-        return r;
-    }
+    static class Event {
+        int number;
+        int type;
+        int idx;
 
-    private static int getNum(int[] a1, int[] a2) {
-        int idx1 = 0;
-        int idx2 = 0;
-        int idx = 0;
-        int[] sum = new int[a1.length + a2.length];
-        while (idx1 < a1.length && idx2 < a2.length) {
-            if (a1[idx1] > a2[idx2]) {
-                sum[idx++] = a2[idx2++];
-            } else if (a1[idx1] < a2[idx2]) {
-                sum[idx++] = a1[idx1++];
-            } else {
-                sum[idx++] = a2[idx2++];
-                sum[idx++] = a1[idx1++];
-            }
+        public Event(int number, int type, int idx) {
+            this.number = number;
+            this.type = type;
+            this.idx = idx;
         }
-        if (idx1 < a1.length) {
-            for (int i = idx1; i < a1.length; i++) {
-                sum[idx++] = a1[i];
-            }
+
+        int number() {
+            return number;
         }
-        if (idx2 < a2.length) {
-            for (int i = idx2; i < a2.length; i++) {
-                sum[idx++] = a2[i];
-            }
+
+        int type() {
+            return type;
         }
-        return sum[a1.length - 1];
     }
 
     private static class TestHelper {
@@ -228,7 +320,7 @@ public class J {
 
         int[] readStringAsIntArray() {
             try {
-                return Arrays.stream(in.readLine().split(" ")).mapToInt(Integer::parseInt).toArray();
+                return Arrays.stream(in.readLine().split("\\s+")).mapToInt(Integer::parseInt).toArray();
             } catch (IOException e) {
                 throw new RuntimeException(e);
             }
@@ -293,13 +385,35 @@ public class J {
             return in;
         }
 
+        public static long[] generateRandomLong(int size) {
+            Random random = new Random(seed++);
+            long[] in = random.longs(1, 100).limit(size).toArray();
+            Arrays.sort(in);
+            return in;
+        }
+
         public static int[] range(int from, int to) {
             return IntStream.range(from, to).toArray();
         }
 
-        public static int[] generateRandom(int size) {
-            //todo
-            return new int[]{};
+        public static int[] generateRandomSorted(int size, int seed) {
+            Random random = new Random(seed);
+            int[] array = random.ints(1, 20).limit(size).toArray();
+            Arrays.sort(array);
+            return array;
+        }
+
+        public static int[] generateRandom(int size, int seed) {
+            Random random = new Random(seed);
+            return random.ints(1, 10).limit(size).toArray();
+        }
+
+        public static int[][] generateTwoDimensionalRandom(int row, int col) {
+            int[][] res = new int[row][col];
+            for (int i = 0; i < row; i++) {
+                res[i] = generateRandom(col, i);
+            }
+            return res;
         }
     }
 }
