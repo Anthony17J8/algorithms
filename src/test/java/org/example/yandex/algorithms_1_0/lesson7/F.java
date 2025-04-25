@@ -23,11 +23,14 @@ import java.io.InputStreamReader;
 import java.io.OutputStreamWriter;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Comparator;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.Random;
 import java.util.Set;
@@ -35,9 +38,9 @@ import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 
-public class E {
+public class F {
     static TestHelper fs = new TestHelper();
     static int start = -1, end = 1, point = 0;
     static int seed = 2025;
@@ -50,7 +53,7 @@ public class E {
         while (N-- > 0) {
             arr[idx++] = fs.readStringAsIntArray();
         }
-        fs.write(getResult(arr));
+        fs.writeOneByOne(getResult(arr));
         fs.close();
 
     }
@@ -59,112 +62,182 @@ public class E {
     @ParameterizedTest
     @MethodSource(value = "source")
     @Timeout(1)
-    void test(int[][] in, int out) throws Exception {
-        assertEquals(out, getResult(in));
+    void test(int[][] in, int[][] out) throws Exception {
+        int[][] result = getResult(in);
+        for (int i = 0; i < out.length; i++) {
+            assertArrayEquals(out[i], result[i]);
+        }
     }
 
     private static Stream<Arguments> source() {
         return Stream.of(
-                Arguments.of(new int[][]{
-                        {1, 0, 23, 0},
-                        {12, 0, 12, 0},
-                        {22, 0, 2, 0},
-                }, 120),
-                Arguments.of(new int[][]{
-
-                        {1, 0, 1, 0},
-                        {3, 1, 3, 1},
-                        {3, 2, 3, 0},
-                }, 1438),
-                Arguments.of(new int[][]{
-                        {1, 0, 2, 0},
-                }, 60),
-                Arguments.of(new int[][]{
-                        {1, 0, 1, 0},
-                }, 1440),
-                Arguments.of(new int[][]{
-                        {23, 0, 1, 0},
-                }, 120),
-                Arguments.of(new int[][]{
-                        {9, 30, 14, 0},
-                        {14, 15, 21, 0},
-                }, 0),
-                Arguments.of(new int[][]{
-                        {14, 00, 18, 00},
-                        {10, 00, 14, 01},
-                }, 1)
+                Arguments.of(
+                        new int[][]{
+                                {2, 5, 1988, 13, 11, 2005},
+                                {1, 1, 1, 1, 1, 30},
+                                {1, 1, 1910, 1, 1, 1990},
+                        }, new int[][]{
+                                {2},
+                                {3}
+                        }),
+                Arguments.of(
+                        new int[][]{
+                                {1, 1, 1, 1, 1, 20},
+                                {1, 1, 30, 1, 1, 60},
+                        }, new int[][]{
+                                {1},
+                                {2}
+                        }),
+                Arguments.of(
+                        new int[][]{
+                                {1, 1, 1, 1, 1, 60},
+                                {1, 1, 20, 1, 1, 40},
+                        }, new int[][]{
+                                {1, 2},
+                        }),
+                Arguments.of(
+                        new int[][]{
+                                {1, 1, 1, 1, 1, 40},
+                                {1, 1, 20, 1, 1, 60},
+                        }, new int[][]{
+                                {1, 2},
+                        }),
+                Arguments.of(
+                        new int[][]{
+                                {2, 5, 1968, 13, 11, 2005},
+                                {1, 1, 1, 1, 1, 30},
+                                {1, 1, 1910, 1, 1, 1990},
+                        }, new int[][]{
+                                {2},
+                                {1, 3}
+                        }),
+                Arguments.of(
+                        new int[][]{
+                                {2, 5, 1988, 13, 11, 2005},
+                                {1, 1, 1, 1, 1, 10},
+                                {2, 1, 1910, 1, 1, 1920},
+                        }, new int[][]{
+                                {0},
+                        }),
+                Arguments.of(
+                        new int[][]{
+                                {2, 5, 1988, 13, 11, 2005},
+                                {1, 1, 1940, 1, 1, 1970},
+                                {2, 1, 1910, 1, 1, 2010},
+                        }, new int[][]{
+                                {2, 3},
+                        }),
+                Arguments.of(
+                        new int[][]{
+                                {2, 5, 1950, 13, 11, 2005},
+                                {1, 1, 1940, 1, 1, 1970},
+                                {2, 1, 1910, 1, 1, 2010},
+                        }, new int[][]{
+                                {1, 2, 3},
+                        }),
+                Arguments.of(
+                        new int[][]{
+                                {1, 1, 1, 1, 1, 89},
+                                {1, 1, 50, 1, 1, 100},
+                                {1, 1, 82, 1, 1, 300},
+                        }, new int[][]{
+                                {1, 2},
+                                {3},
+                        })
         );
     }
 
 
-    private static int getResult(int[][] in) {
+    /**
+     * год, номер которого кратен 400, — високосный;
+     * остальные годы, номер которых кратен 100, — невисокосные (например, годы 1700, 1800, 1900, 2100, 2200, 2300);
+     * остальные годы, номер которых кратен 4, — високосные;
+     * все остальные годы — невисокосные
+     */
+    private static int[][] getResult(int[][] in) {
         List<Event> events = new ArrayList<>();
-
-        if (in.length == 1) {
-            int s1 = in[0][0] * 60 + in[0][1];
-            int s2 = in[0][2] * 60 + in[0][3];
-            if (s1 == s2) {
-                return 60 * 24;
-            }
-            if (s2 < s1) {
-                return 60 * 24 - (s1 - s2);
-            }
-        }
-
         for (int i = 0; i < in.length; i++) {
-            events.add(new Event(in[i][0] * 60 + in[i][1], start, i));
-            events.add(new Event(in[i][2] * 60 + (in[i][3] - 1), end, i));
+            int[] ev = in[i];
+            LocalDate y18 = LocalDate.of(ev[2], ev[1], ev[0]).plusYears(18);
+            LocalDate death = LocalDate.of(ev[5], ev[4], ev[3]);
+            LocalDate end = y18.plusYears(80);
+            if (y18.isBefore(death)) {
+                events.add(new Event(y18, -1, i + 1));
+                events.add(new Event(end.isBefore(death) ? end : death, 1, i + 1));
+            }
+        }
+        if (events.isEmpty()) {
+            return new int[][]{{0}};
         }
 
-        events.sort(Comparator.comparing(Event::time).thenComparing(Event::type));
-        Event startE = null;
-        Set<Integer> handled = new HashSet<>();
-        boolean[] isOn = new boolean[in.length];
-        int cnt = 0;
-        int res = 0;
-        for (int i = 0; handled.size() < in.length; i++) {
-            int idx = i % events.size();
-            Event e = events.get(idx);
-            if (e.type == start) {
-                isOn[e.idx] = true;
-                if (++cnt == in.length) {
-                    startE = e;
-                }
-            } else if (e.type == end && isOn[e.idx]) {
-                isOn[e.idx] = false;
-                if (cnt == in.length && startE != null) {
-                    if (e.time < startE.time) {
-                        res += 24 * 60 - startE.time + e.time + 1;
-                    } else {
-                        res += e.time + 1 - startE.time;
+        events.sort(Comparator.comparing(Event::date).thenComparing(Event::type));
+
+        Map<Integer, Set<Integer>> result = new HashMap<>();
+        Set<Integer> current = new HashSet<>();
+        for (int i = 0; i < events.size(); i++) {
+            Event ev = events.get(i);
+            if (ev.type == start) {
+                List<Integer> temp = new ArrayList<>();
+                Set<Integer> now = new HashSet<>();
+                now.add(ev.idx);
+                for (int j = i + 1; j < events.size(); j++) {
+                    Event ev2 = events.get(j);
+                    if (ev2.type == end && ev2.idx == ev.idx) {
+                        if (now.size() > current.size()) {
+                            result.put(ev.idx, now);
+                            temp.forEach(v -> result.get(v).remove(ev.idx));
+                        }
+                        break;
+                    }
+                    if (ev2.type == end && result.containsKey(ev2.idx)) {
+                        temp.add(ev2.idx);
+                        now.remove(ev2.idx);
+                    } else if (ev2.type == start) {
+                        now.add(ev2.idx);
+                        if (now.size() > current.size()) {
+                            result.put(ev.idx, now);
+                            temp.forEach(v -> result.get(v).remove(ev.idx));
+                        }
                     }
                 }
-                cnt--;
-                handled.add(e.idx);
+
+                current.add(ev.idx);
+            } else if (ev.type == end) {
+                current.remove(ev.idx);
             }
         }
 
+        int extIdx = 0;
+        int[][] res = new int[result.size()][];
+        for (Set<Integer> values : result.values()) {
+            int[] rc = new int[values.size()];
+            int idx = 0;
+            for (Integer integer : values) {
+                rc[idx++] = integer;
+            }
+            res[extIdx++] = rc;
+        }
         return res;
     }
 
 
     static class Event {
-        int time;
+        LocalDate date;
         int type;
         int idx;
 
-        public Event(int time, int type, int idx) {
-            this.time = time;
+        public Event(LocalDate date, int type, int idx) {
             this.type = type;
             this.idx = idx;
-        }
-
-        int time() {
-            return time;
+            this.date = date;
         }
 
         int type() {
             return type;
+        }
+
+        LocalDate date() {
+            return date;
         }
     }
 
@@ -254,6 +327,15 @@ public class E {
         void writeOneByOne(char[][] in) throws IOException {
             for (int i = 0; i < in.length; i++) {
                 for (int j = 0; j < in[0].length; j++) {
+                    out.write(in[i][j] + " ");
+                }
+                out.write("\n");
+            }
+        }
+
+        void writeOneByOne(int[][] in) throws IOException {
+            for (int i = 0; i < in.length; i++) {
+                for (int j = 0; j < in[i].length; j++) {
                     out.write(in[i][j] + " ");
                 }
                 out.write("\n");
