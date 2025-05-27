@@ -8,7 +8,7 @@
    Legal use of the software provides receipt of a license from the right holder only.
  */
 
-package org.example.yandex.algorithms_1_0.lesson8;
+package org.example.yandex.algorithms_1_0.lesson7;
 
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Timeout;
@@ -25,118 +25,180 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Comparator;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.Random;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
-import static org.junit.jupiter.api.Assertions.assertArrayEquals;
-
-public class B {
+public class I {
     static TestHelper fs = new TestHelper();
+    static int start = -1, end = 1, point = 0;
     static int seed = 2025;
 
     public static void main(String[] args) throws Exception {
-        getResult(fs.readStringAsIntArray());
-        fs.writeAll(l.stream().mapToInt(Integer::intValue).toArray(), ' ');
+        int[] in = fs.readStringAsIntArray();
+        int N = in[0];
+        int M = in[1];
+        int num = M;
+        int idx = 0;
+//
+        List<Event> events = new ArrayList<>(M);
+        while (num-- > 0) {
+           addEvents(events, fs.readStringAsStringArray(), idx);
+            idx++;
+        }
+        fs.write(getResult(events));
         fs.close();
-
     }
+
+//    public static void main(String[] args) throws Exception {
+//        String[] in = fs.readFromFile().toList().toArray(new String[]{});
+//        String[] n = in[0].split(" ");
+//        int N = Integer.parseInt(n[0]);
+//        int M = Integer.parseInt(n[1]);
+//        int num = M;
+//        int idx = 0;
+//
+//        List<Event> events = new ArrayList<>(M);
+//        while (num-- > 0) {
+//           addEvents(events, in[idx + 1].split(" "), idx);
+//            idx++;
+//        }
+//        fs.write(getResult(events));
+//        fs.close();
+//
+//    }
 
     @DisplayName("{0}")
     @ParameterizedTest
     @MethodSource(value = "source")
-    @Timeout(1)
-    void test(int[] in, int[] out) throws Exception {
-        l.clear();
-        getResult(in);
-        assertArrayEquals(out, l.stream().mapToInt(Integer::intValue).toArray());
+    @Timeout(2)
+    void test(String[][] in, int out) throws Exception {
+//        assertEquals(out, getResult(in));
     }
-
-    static List<Integer> l = new ArrayList<>();
 
     private static Stream<Arguments> source() {
         return Stream.of(
-                Arguments.of(new int[]{7, 3, 2, 1, 9, 5, 4, 6, 8, 0}, new int[]{1, 2, 3, 4, 2, 3, 4, 4, 3}),
-                Arguments.of(new int[]{1, 1, 1, 1, 1}, new int[]{1}),
-                Arguments.of(new int[]{1, 2, 3, 4, 5, 6, 7, 8, 9}, new int[]{1, 2, 3, 4, 5, 6, 7, 8, 9}),
-                Arguments.of(new int[]{2}, new int[]{1})
+                Arguments.of(new String[][]{
+                        {"2", "20:00", "1", "10:00"},
+                        {"1", "08:00", "2", "21:00"}
+                }, 3),
+                Arguments.of(new String[][]{
+                        {"1", "09:00", "2", "20:00"},
+                        {"2", "20:00", "1", "09:00"}
+                }, 1),
+                Arguments.of(new String[][]{
+                        {"3", "03:52", "1", "08:50"},
+                        {"1", "18:28", "3", "21:53"},
+                        {"2", "03:58", "3", "09:00"},
+                        {"3", "14:59", "2", "21:13"}
+                }, 2),
+                Arguments.of(new String[][]{
+                        {"1", "12:37", "2", "14:56"},
+                        {"2", "14:58", "3", "15:07"},
+                        {"1", "11:34", "3", "15:23"},
+                        {"3", "16:00", "1", "19:23"}
+                }, -1),
+                Arguments.of(new String[][]{
+                        {"1", "03:52", "2", "08:50"},
+                        {"1", "04:52", "2", "01:50"},
+                }, -1)
         );
     }
 
-
-    private static void getResult(int[] in) {
-        Tree tree = new Tree(in.length);
-        for (int j = 0; j < in.length; j++) {
-            int i = in[j];
-            if (i == 0 && j == in.length - 1) {
-                break;
-            }
-            tree.addNode(i);
-        }
+    private static void addEvents(List<Event> events, String[] row, int idx) {
+        int start = Integer.parseInt(row[0]);
+        String[] stSplit = row[1].split(":");
+        int startTime = Integer.parseInt(stSplit[0]) * 60 + Integer.parseInt(stSplit[1]);
+        events.add(new Event(startTime, 1, start, idx, false));
+//            left.add(start);
+        int end = Integer.parseInt(row[2]);
+        String[] endSplit = row[3].split(":");
+        int endTime = Integer.parseInt(endSplit[0]) * 60 + Integer.parseInt(endSplit[1]);
+        events.add(new Event(endTime, -1, end, idx, startTime > endTime));
     }
 
-    static class Tree {
-        Integer[][] elements;
-        Integer root;
-        int currentIdx = 0;
-        //0 - index
-        //1 - key
-        //2 - left
-        //3 - right
-        //4 - lvl
+    private static int getResult(List<Event> events) {
+//        if (!left.equals(right)) {
+//            return -1;
+//        }
 
-        public Tree(int size) {
-            this.elements = new Integer[size][5];
-            for (int i = 0; i < size; i++) {
-                elements[i] = new Integer[]{i, null, null, null, null};
+        events.sort(Comparator.comparing(Event::val).thenComparing(Event::type));
+        int count3 = 0;
+//        boolean[] busesActive = new boolean[in.length];
+        int busesIdx = 0;
+        Map<Integer, Integer> stations = new HashMap<>();
+        for (int i = 0; i < events.size() * 3; i++) {
+            int ix = i % events.size();
+            if (i / events.size() == 2 && ix == 0) {
+                count3 = busesIdx;
             }
-        }
-
-        public void addNode(int key) {
-            if (root == null) {
-                root = currentIdx;
-                elements[currentIdx][1] = key;
-                elements[currentIdx][4] = 1;
-                l.add(1);
-                currentIdx++;
-            } else {
-                Integer parent = root;
-                while (parent != null) {
-                    if (elements[parent][1] > key) {
-                        if (elements[parent][2] == null) {
-                            elements[currentIdx][1] = key;
-                            int curlvl = elements[parent][4] + 1;
-                            elements[currentIdx][4] = curlvl;
-                            l.add(curlvl);
-                            elements[parent][2] = currentIdx;
-                            currentIdx++;
-                            break;
-                        } else {
-                            parent = elements[parent][2];
-                        }
-                    } else if (elements[parent][1] < key) {
-                        if (elements[parent][3] == null) {
-                            elements[currentIdx][1] = key;
-                            int curlvl = elements[parent][4] + 1;
-                            elements[currentIdx][4] = curlvl;
-                            l.add(curlvl);
-                            elements[parent][3] = currentIdx;
-                            currentIdx++;
-                            break;
-                        } else {
-                            parent = elements[parent][3];
-                        }
-                    } else {
-                        break;
-                    }
+            Event event = events.get(ix);
+            if (event.type == 1) {
+                if (stations.containsKey(event.city) && stations.get(event.city) > 0) {
+                    stations.computeIfPresent(event.city, (key, value) -> value - 1);
+                } else {
+                    busesIdx++;
+                }
+//                busesActive[event.idx] = true;
+            } else if (event.type == -1 && !(i / events.size() < 1 && event.skipEnd)) {
+                if (!stations.containsKey(event.city)) {
+                    stations.put(event.city, 1);
+                } else {
+                    stations.put(event.city, stations.get(event.city) + 1);
                 }
             }
         }
+        if (busesIdx == count3) return busesIdx;
+        else return -1;
     }
 
+    private static List<Event> getEvents(String[][] in) {
+        List<Event> events = new ArrayList<>(in.length);
+        int idx = 0;
+//        Set<Integer> left = new HashSet<>();
+//        Set<Integer> right = new HashSet<>();
+        for (String[] row : in) {
+
+//            right.add(end);
+            idx++;
+        }
+        return events;
+    }
+
+    static class Event {
+        int val;
+        int type;
+        int idx;
+        int city;
+        boolean skipEnd;
+
+        public Event(int val, int type, int city, int idx, boolean skipEnd) {
+            this.type = type;
+            this.idx = idx;
+            this.val = val;
+            this.city = city;
+            this.skipEnd = skipEnd;
+        }
+
+        int type() {
+            return type;
+        }
+
+        int val() {
+            return val;
+        }
+
+        int city() {
+            return city;
+        }
+
+    }
 
     private static class TestHelper {
         BufferedReader in;
@@ -152,7 +214,7 @@ public class B {
         }
 
         Stream<String> readFromFile() throws IOException {
-            return Files.lines(Path.of("src/test/java/org/example/yandex/algorithms_1_0/lesson4/input.txt"));
+            return Files.lines(Path.of("src/test/java/org/example/yandex/algorithms_1_0/lesson7/1.txt"));
 //            return Files.lines(Path.of("input.txt"));
         }
 
@@ -224,6 +286,15 @@ public class B {
         void writeOneByOne(char[][] in) throws IOException {
             for (int i = 0; i < in.length; i++) {
                 for (int j = 0; j < in[0].length; j++) {
+                    out.write(in[i][j] + " ");
+                }
+                out.write("\n");
+            }
+        }
+
+        void writeOneByOne(int[][] in) throws IOException {
+            for (int i = 0; i < in.length; i++) {
+                for (int j = 0; j < in[i].length; j++) {
                     out.write(in[i][j] + " ");
                 }
                 out.write("\n");
@@ -329,7 +400,7 @@ public class B {
 
         public static int[] generateRandom(int size, int seed) {
             Random random = new Random(seed);
-            return random.ints(1, 10).limit(size).toArray();
+            return random.ints(0, 10000).limit(size).toArray();
         }
 
         public static int[][] generateTwoDimensionalRandom(int row, int col) {

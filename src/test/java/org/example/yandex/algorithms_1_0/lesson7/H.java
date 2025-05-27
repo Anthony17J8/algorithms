@@ -8,7 +8,7 @@
    Legal use of the software provides receipt of a license from the right holder only.
  */
 
-package org.example.yandex.algorithms_1_0.lesson8;
+package org.example.yandex.algorithms_1_0.lesson7;
 
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Timeout;
@@ -25,6 +25,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Objects;
 import java.util.Random;
@@ -32,15 +33,24 @@ import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
-import static org.junit.jupiter.api.Assertions.assertArrayEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
-public class B {
+public class H {
     static TestHelper fs = new TestHelper();
+    static int start = -1, end = 1, point = 0;
     static int seed = 2025;
+    static String WRONG = "Wrong Answer", ACCEPTED = "Accepted";
 
     public static void main(String[] args) throws Exception {
-        getResult(fs.readStringAsIntArray());
-        fs.writeAll(l.stream().mapToInt(Integer::intValue).toArray(), ' ');
+        int K = fs.nextInt();
+        int num = K;
+        String[] res = new String[K];
+        int idx = 0;
+        while (num-- > 0) {
+            int[] in = fs.readStringAsIntArray();
+            res[idx++] = getResult(in);
+        }
+        fs.writeAll(res, '\n');
         fs.close();
 
     }
@@ -48,95 +58,203 @@ public class B {
     @DisplayName("{0}")
     @ParameterizedTest
     @MethodSource(value = "source")
-    @Timeout(1)
-    void test(int[] in, int[] out) throws Exception {
-        l.clear();
-        getResult(in);
-        assertArrayEquals(out, l.stream().mapToInt(Integer::intValue).toArray());
+    @Timeout(4)
+    void test(int[] in, String out) throws Exception {
+        assertEquals(out, getResult(in));
     }
 
-    static List<Integer> l = new ArrayList<>();
-
     private static Stream<Arguments> source() {
+        int[] ints = TestHelper.generateRandom(20001, 2025);
+        ints[0] = 10000;
+        ints[1] = 0;
+        ints[2] = 10000;
         return Stream.of(
-                Arguments.of(new int[]{7, 3, 2, 1, 9, 5, 4, 6, 8, 0}, new int[]{1, 2, 3, 4, 2, 3, 4, 4, 3}),
-                Arguments.of(new int[]{1, 1, 1, 1, 1}, new int[]{1}),
-                Arguments.of(new int[]{1, 2, 3, 4, 5, 6, 7, 8, 9}, new int[]{1, 2, 3, 4, 5, 6, 7, 8, 9}),
-                Arguments.of(new int[]{2}, new int[]{1})
+                Arguments.of(new int[]{3, 0, 3000, 2500, 7000, 2700, 10000}, WRONG),
+                Arguments.of(new int[]{2, 0, 3000, 2700, 10000}, ACCEPTED),
+                Arguments.of(new int[]{3, 0, 3000, 3500, 5000, 4000, 10000}, WRONG),
+                Arguments.of(new int[]{3, 0, 3000, 3000, 5000, 4000, 9999}, WRONG),
+                Arguments.of(new int[]{3, 0, 3000, 3500, 5000, 4000, 10000}, WRONG),
+                Arguments.of(new int[]{2, 0, 5000, 5000, 10000}, ACCEPTED),
+                Arguments.of(new int[]{3, 10, 3000, 3000, 5000, 4000, 10000}, WRONG),
+                Arguments.of(new int[]{3, 1, 3000, 3000, 5000, 4000, 10000}, WRONG),
+                Arguments.of(new int[]{1, 0, 1000}, WRONG),
+                Arguments.of(new int[]{1, 0, 10000}, ACCEPTED),
+                Arguments.of(new int[]{2, 0, 3000, 0, 10000}, WRONG),
+                Arguments.of(new int[]{2, 0, 10000, 3000, 10000}, WRONG),
+                Arguments.of(ints, WRONG)
         );
     }
 
-
-    private static void getResult(int[] in) {
-        Tree tree = new Tree(in.length);
-        for (int j = 0; j < in.length; j++) {
-            int i = in[j];
-            if (i == 0 && j == in.length - 1) {
-                break;
-            }
-            tree.addNode(i);
+    private static String getResult(int[] in) {
+        List<Event> events = new ArrayList<>();
+        int idx = 0;
+        int pow = 1;
+        while (idx < in[0]) {
+            events.add(new Event(in[pow], start, idx, in[pow + 1] - in[pow]));
+            events.add(new Event(in[pow + 1], end, idx, in[pow] - in[pow + 1]));
+            idx++;
+            pow += 2;
         }
+
+        events.sort(Comparator.comparing(Event::val).thenComparing(Event::type)
+                .thenComparing(Comparator.comparing(Event::len).reversed()));
+
+//        String result = ACCEPTED;
+        boolean isSecured = checkSecurity(events);
+        if (!isSecured) {
+            return WRONG;
+        }
+
+        String result = checkSecurityFast(events) ? ACCEPTED : WRONG;
+//        int start = 0;
+//        int end = (in.length - 1) / 2;
+//        while (start < end) {
+//            if (!checkSecurityFast(events)) {
+//                result = WRONG;
+//                break;
+//            }
+//            start++;
+//        }
+
+        return result;
     }
 
-    static class Tree {
-        Integer[][] elements;
-        Integer root;
-        int currentIdx = 0;
-        //0 - index
-        //1 - key
-        //2 - left
-        //3 - right
-        //4 - lvl
-
-        public Tree(int size) {
-            this.elements = new Integer[size][5];
-            for (int i = 0; i < size; i++) {
-                elements[i] = new Integer[]{i, null, null, null, null};
-            }
-        }
-
-        public void addNode(int key) {
-            if (root == null) {
-                root = currentIdx;
-                elements[currentIdx][1] = key;
-                elements[currentIdx][4] = 1;
-                l.add(1);
-                currentIdx++;
-            } else {
-                Integer parent = root;
-                while (parent != null) {
-                    if (elements[parent][1] > key) {
-                        if (elements[parent][2] == null) {
-                            elements[currentIdx][1] = key;
-                            int curlvl = elements[parent][4] + 1;
-                            elements[currentIdx][4] = curlvl;
-                            l.add(curlvl);
-                            elements[parent][2] = currentIdx;
-                            currentIdx++;
-                            break;
-                        } else {
-                            parent = elements[parent][2];
-                        }
-                    } else if (elements[parent][1] < key) {
-                        if (elements[parent][3] == null) {
-                            elements[currentIdx][1] = key;
-                            int curlvl = elements[parent][4] + 1;
-                            elements[currentIdx][4] = curlvl;
-                            l.add(curlvl);
-                            elements[parent][3] = currentIdx;
-                            currentIdx++;
-                            break;
-                        } else {
-                            parent = elements[parent][3];
-                        }
-                    } else {
-                        break;
-                    }
+    private static boolean checkSecurity(List<Event> events) {
+        Integer st = null;
+        Integer en = null;
+        int now = 0;
+        boolean result = true;
+        for (Event event : events) {
+            if (event.type == start) {
+                if (now == 0 && en != null && en != 10000) {
+                    result = false;
+                    break;
+                }
+                now += 1;
+                if (st == null) {
+                    st = event.val;
+                } else {
+                    st = Math.min(st, event.val);
+                }
+            } else if (event.type == end) {
+                now -= 1;
+                if (en == null) {
+                    en = event.val;
+                } else {
+                    en = Math.max(en, event.val);
                 }
             }
         }
+        if (en != null && st != null && en - st != 10000) {
+            result = false;
+        } else if (st == null) {
+            result = false;
+        }
+        return result;
     }
 
+    private static boolean checkSecurity(List<Event> events, int skipId) {
+        Integer st = null;
+        Integer en = null;
+        int now = 0;
+        boolean result = true;
+        for (Event event : events) {
+            if (event.idx == skipId) {
+                continue;
+            }
+            if (event.type == start) {
+                if (now == 0 && en != null && en != 10000) {
+                    result = false;
+                    break;
+                }
+                now += 1;
+                if (st == null) {
+                    st = event.val;
+                } else {
+                    st = Math.min(st, event.val);
+                }
+            } else if (event.type == end) {
+                now -= 1;
+                if (en == null) {
+                    en = event.val;
+                } else {
+                    en = Math.max(en, event.val);
+                }
+            }
+        }
+        if (en != null && st != null && en - st != 10000) {
+            result = false;
+        } else if (st == null) {
+            result = false;
+        }
+        return result;
+    }
+
+    private static boolean checkSecurityFast(List<Event> events) {
+        boolean result = true;
+        int current = 0;
+        for (int i = 0; i < events.size(); i++) {
+            Event event = events.get(i);
+            if (event.type == end) {
+                current--;
+            }
+            if (event.type == start) {
+                if (current > 0) {
+                    boolean isSecured = checkOne(events, i, event.idx, current);
+                    if (isSecured) {
+                        result = false;
+                        break;
+                    }
+                }
+                current++;
+            }
+        }
+        return result;
+    }
+
+    private static boolean checkOne(List<Event> events, int i, int idx, int current) {
+        boolean isSecured = true;
+        for (int j = i + 1; events.get(j).idx != idx; j++) {
+            Event event = events.get(j);
+            if (event.type == end) {
+                current--;
+            }
+            if (event.type == start) {
+                current++;
+            }
+            if (current == 0) {
+                isSecured = false;
+                break;
+            }
+        }
+        return isSecured;
+    }
+
+    static class Event {
+        int val;
+        int type;
+        int idx;
+        int len;
+
+        public Event(int val, int type, int idx, int len) {
+            this.type = type;
+            this.idx = idx;
+            this.val = val;
+            this.len = len;
+        }
+
+        int type() {
+            return type;
+        }
+
+        int val() {
+            return val;
+        }
+
+        int len() {
+            return len;
+        }
+    }
 
     private static class TestHelper {
         BufferedReader in;
@@ -224,6 +342,15 @@ public class B {
         void writeOneByOne(char[][] in) throws IOException {
             for (int i = 0; i < in.length; i++) {
                 for (int j = 0; j < in[0].length; j++) {
+                    out.write(in[i][j] + " ");
+                }
+                out.write("\n");
+            }
+        }
+
+        void writeOneByOne(int[][] in) throws IOException {
+            for (int i = 0; i < in.length; i++) {
+                for (int j = 0; j < in[i].length; j++) {
                     out.write(in[i][j] + " ");
                 }
                 out.write("\n");
@@ -329,7 +456,7 @@ public class B {
 
         public static int[] generateRandom(int size, int seed) {
             Random random = new Random(seed);
-            return random.ints(1, 10).limit(size).toArray();
+            return random.ints(0, 10000).limit(size).toArray();
         }
 
         public static int[][] generateTwoDimensionalRandom(int row, int col) {

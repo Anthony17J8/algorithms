@@ -8,7 +8,7 @@
    Legal use of the software provides receipt of a license from the right holder only.
  */
 
-package org.example.yandex.algorithms_1_0.lesson8;
+package org.example.yandex.algorithms_1_0.lesson7;
 
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Timeout;
@@ -25,6 +25,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Objects;
 import java.util.Random;
@@ -34,13 +35,21 @@ import java.util.stream.Stream;
 
 import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 
-public class B {
+public class G {
     static TestHelper fs = new TestHelper();
+    static int start = -1, end = 1, point = 0;
     static int seed = 2025;
 
     public static void main(String[] args) throws Exception {
-        getResult(fs.readStringAsIntArray());
-        fs.writeAll(l.stream().mapToInt(Integer::intValue).toArray(), ' ');
+        int[] in = fs.readStringAsIntArray();
+        int M = in[0];
+        int N = in[1];
+        int[][] arr = new int[N][];
+        int idx = 0;
+        while (N-- > 0) {
+            arr[idx++] = fs.readStringAsIntArray();
+        }
+        fs.writeOneByOne(getResult(arr, M));
         fs.close();
 
     }
@@ -49,94 +58,133 @@ public class B {
     @ParameterizedTest
     @MethodSource(value = "source")
     @Timeout(1)
-    void test(int[] in, int[] out) throws Exception {
-        l.clear();
-        getResult(in);
-        assertArrayEquals(out, l.stream().mapToInt(Integer::intValue).toArray());
+    void test(int[][] in, int M, int[][] out) throws Exception {
+        int[][] result = getResult(in, M);
+        for (int i = 0; i < out.length; i++) {
+            assertArrayEquals(out[i], result[i]);
+        }
     }
-
-    static List<Integer> l = new ArrayList<>();
 
     private static Stream<Arguments> source() {
         return Stream.of(
-                Arguments.of(new int[]{7, 3, 2, 1, 9, 5, 4, 6, 8, 0}, new int[]{1, 2, 3, 4, 2, 3, 4, 4, 3}),
-                Arguments.of(new int[]{1, 1, 1, 1, 1}, new int[]{1}),
-                Arguments.of(new int[]{1, 2, 3, 4, 5, 6, 7, 8, 9}, new int[]{1, 2, 3, 4, 5, 6, 7, 8, 9}),
-                Arguments.of(new int[]{2}, new int[]{1})
+                Arguments.of(
+                        new int[][]{
+                                {2, 1, 1},
+                                {1, 1, 2},
+                        }, 1,
+                        new int[][]{
+                                {1},
+                                {0, 1}
+                        }),
+                Arguments.of(
+                        new int[][]{
+                                {1, 1, 1},
+                                {1, 1, 1},
+                        }, 2,
+                        new int[][]{
+                                {1},
+                                {1, 1}
+                        }),
+                Arguments.of(
+                        new int[][]{
+                                {1, 1, 1},
+                                {1, 1, 1},
+                        }, 0,
+                        new int[][]{
+                                {0},
+                                {0, 0}
+                        }),
+                Arguments.of(
+                        new int[][]{
+                                {2, 2, 1},
+                                {1, 2, 2},
+                        }, 5,
+                        new int[][]{
+                                {5},
+                                {2, 3}
+                        }),
+                Arguments.of(
+                        new int[][]{
+                                {1, 1, 1},
+                        }, 1000,
+                        new int[][]{
+                                {1999},
+                                {1000}
+                        }),
+                Arguments.of(
+                        new int[][]{
+                                {1, 1, 1},
+                        }, 10,
+                        new int[][]{
+                                {19},
+                                {10}
+                        })
         );
     }
 
-
-    private static void getResult(int[] in) {
-        Tree tree = new Tree(in.length);
-        for (int j = 0; j < in.length; j++) {
-            int i = in[j];
-            if (i == 0 && j == in.length - 1) {
-                break;
-            }
-            tree.addNode(i);
-        }
-    }
-
-    static class Tree {
-        Integer[][] elements;
-        Integer root;
-        int currentIdx = 0;
-        //0 - index
-        //1 - key
-        //2 - left
-        //3 - right
-        //4 - lvl
-
-        public Tree(int size) {
-            this.elements = new Integer[size][5];
-            for (int i = 0; i < size; i++) {
-                elements[i] = new Integer[]{i, null, null, null, null};
-            }
-        }
-
-        public void addNode(int key) {
-            if (root == null) {
-                root = currentIdx;
-                elements[currentIdx][1] = key;
-                elements[currentIdx][4] = 1;
-                l.add(1);
-                currentIdx++;
-            } else {
-                Integer parent = root;
-                while (parent != null) {
-                    if (elements[parent][1] > key) {
-                        if (elements[parent][2] == null) {
-                            elements[currentIdx][1] = key;
-                            int curlvl = elements[parent][4] + 1;
-                            elements[currentIdx][4] = curlvl;
-                            l.add(curlvl);
-                            elements[parent][2] = currentIdx;
-                            currentIdx++;
-                            break;
-                        } else {
-                            parent = elements[parent][2];
-                        }
-                    } else if (elements[parent][1] < key) {
-                        if (elements[parent][3] == null) {
-                            elements[currentIdx][1] = key;
-                            int curlvl = elements[parent][4] + 1;
-                            elements[currentIdx][4] = curlvl;
-                            l.add(curlvl);
-                            elements[parent][3] = currentIdx;
-                            currentIdx++;
-                            break;
-                        } else {
-                            parent = elements[parent][3];
-                        }
-                    } else {
-                        break;
-                    }
+    private static int[][] getResult(int[][] in, int M) {
+        List<Event> events = new ArrayList<>();
+        for (int i = 0; i < in.length; i++) {
+            int[] person = in[i];
+            int T = person[0];
+            int Z = person[1];
+            int Y = person[2];
+            int total = M;
+            int c = Z;
+            int diff = 0;
+            int v = 0;
+            while (total-- > 0) {
+                c--;
+                v += T + diff;
+                events.add(new Event(v, -1, i));
+                if (c == 0) {
+                    c = Z;
+                    diff = Y;
+                } else {
+                    diff = 0;
                 }
             }
         }
+
+        int[] counter = new int[in.length];
+        events.sort(Comparator.comparingInt(Event::val));
+        int total = 0;
+        int totalTime = 0;
+        for (Event event : events) {
+            counter[event.idx]++;
+            totalTime = event.val;
+            total++;
+            if (total == M) {
+                break;
+            }
+        }
+
+        int[][] result = new int[2][];
+        result[0] = new int[]{totalTime};
+        result[1] = counter;
+        return result;
     }
 
+
+    static class Event {
+        int val;
+        int type;
+        int idx;
+
+        public Event(int val, int type, int idx) {
+            this.type = type;
+            this.idx = idx;
+            this.val = val;
+        }
+
+        int type() {
+            return type;
+        }
+
+        int val() {
+            return val;
+        }
+    }
 
     private static class TestHelper {
         BufferedReader in;
@@ -224,6 +272,15 @@ public class B {
         void writeOneByOne(char[][] in) throws IOException {
             for (int i = 0; i < in.length; i++) {
                 for (int j = 0; j < in[0].length; j++) {
+                    out.write(in[i][j] + " ");
+                }
+                out.write("\n");
+            }
+        }
+
+        void writeOneByOne(int[][] in) throws IOException {
+            for (int i = 0; i < in.length; i++) {
+                for (int j = 0; j < in[i].length; j++) {
                     out.write(in[i][j] + " ");
                 }
                 out.write("\n");

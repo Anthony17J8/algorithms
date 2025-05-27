@@ -34,7 +34,7 @@ import java.util.stream.Stream;
 
 import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 
-public class B {
+public class C {
     static TestHelper fs = new TestHelper();
     static int seed = 2025;
 
