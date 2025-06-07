@@ -23,19 +23,23 @@ import java.io.InputStreamReader;
 import java.io.OutputStreamWriter;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Comparator;
+import java.util.HashSet;
+import java.util.List;
 import java.util.Objects;
 import java.util.Random;
+import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
-// TODO!!!
 public class J {
     static TestHelper fs = new TestHelper();
-    static int start = -1, end = 1, point = 0;
+    static int start = 1, end = -1, point = 0;
     static int seed = 2025;
     static String NO = "NO", YES = "YES";
 
@@ -50,7 +54,14 @@ public class J {
         while (num-- > 0) {
             input[idx++] = fs.readStringAsIntArray();
         }
-        fs.write(getResult(input));
+        Result result = getResult(input, W, L);
+        fs.write(result.can);
+        if (result.can.equals("YES")) {
+            fs.newLine();
+            fs.write(result.minused);
+            fs.newLine();
+            fs.writeAll(result.blocks);
+        }
         fs.close();
 
     }
@@ -59,49 +70,118 @@ public class J {
     @ParameterizedTest
     @MethodSource(value = "source")
     @Timeout(2)
-    void test(int[][] in, String out) throws Exception {
-        assertEquals(out, getResult(in));
+    void test(int[][] in, int W, int L, String out) throws Exception {
+        Result result = getResult(in, W, L);
+        assertEquals(out, result.can);
     }
 
     private static Stream<Arguments> source() {
         return Stream.of(
                 Arguments.of(new int[][]{
                         {0, 0, 0, 10, 10, 10},
-                }, YES),
+                }, 10, 10, YES),
                 Arguments.of(new int[][]{
                         {0, 0, 0, 10, 5, 5},
                         {0, 5, 5, 10, 10, 10},
-                }, NO)
+                }, 10, 10, NO)
         );
     }
 
-    private static String getResult(int[][] in) {
-        return YES;
+    private static Result getResult(int[][] in, int w, int l) {
+        List<Event> events = new ArrayList<>();
+        int minused = in.length + 1;
+        int totalArea = w * l;
+        for (int i = 0; i < in.length; i++) {
+            int x1 = in[i][0];
+            int y1 = in[i][1];
+            int z1 = in[i][2];
+            int x2 = in[i][3];
+            int y2 = in[i][4];
+            int z2 = in[i][5];
+            int area = Math.abs(x2 - x1) * Math.abs(y2 - y1);
+            events.add(new Event(z1, start, i + 1, area));
+            events.add(new Event(z2, end, i + 1, area));
+        }
+
+        events.sort(Comparator.comparing(Event::z).thenComparing(Event::type));
+        int curarea = 0;
+        int blocks = 0;
+        for (int i = 0; i < events.size(); i++) {
+            Event e = events.get(i);
+            if (e.type == start) {
+                curarea += e.area;
+                blocks++;
+            } else if (e.type == end) {
+                curarea -= e.area;
+                blocks--;
+            }
+            if (curarea == totalArea && blocks < minused) {
+                minused = blocks;
+            }
+        }
+        if (minused == in.length + 1) {
+            return new Result("NO");
+        }
+
+        Set<Integer> numBlocks = new HashSet<>();
+        for (int i = 0; i < events.size(); i++) {
+            Event e = events.get(i);
+            if (e.type == start) {
+                curarea += e.area;
+                numBlocks.add(e.idx);
+                blocks++;
+            } else if (e.type == end) {
+                curarea -= e.area;
+                numBlocks.remove(e.idx);
+                blocks--;
+            }
+            if (curarea == totalArea && blocks == minused) {
+                break;
+            }
+        }
+        return new Result("YES", minused,
+                Arrays.stream(numBlocks.toArray(new Integer[0])).mapToInt(Integer::intValue).sorted().toArray());
+    }
+
+    static class Result {
+        String can;
+        int minused;
+        int[] blocks;
+
+        public Result(String can) {
+            this.can = can;
+        }
+
+        public Result(String can, int minused, int[] blocks) {
+            this.can = can;
+            this.minused = minused;
+            this.blocks = blocks;
+        }
     }
 
     static class Event {
-        int val;
+        int z;
         int type;
         int idx;
-        int len;
+        int area;
 
-        public Event(int val, int type, int idx, int len) {
+        public Event(int z, int type, int idx, int area) {
             this.type = type;
             this.idx = idx;
-            this.val = val;
-            this.len = len;
+            this.z = z;
+            this.area = area;
         }
 
         int type() {
             return type;
         }
 
-        int val() {
-            return val;
+        int z() {
+            return z;
         }
 
-        int len() {
-            return len;
+        int area() {
+            return area;
         }
     }
 

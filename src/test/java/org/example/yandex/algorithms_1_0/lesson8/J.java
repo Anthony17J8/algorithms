@@ -1,3 +1,4 @@
+
 /*
    Copyright 2020 Russian Post
    <p>
@@ -23,59 +24,179 @@ import java.io.InputStreamReader;
 import java.io.OutputStreamWriter;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.Random;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 
-public class C {
+public class J {
     static TestHelper fs = new TestHelper();
     static int seed = 2025;
 
     public static void main(String[] args) throws Exception {
-        fs.write(getResult(fs.readStringAsIntArray()));
+        int N = fs.nextInt();
+        int idx = 0;
+        Tree tree = new Tree(N);
+        while (idx++ < N - 1) {
+            String[] in = fs.readStringAsStringArray();
+            tree.addNode(in[0]);
+            tree.addNode(in[1]);
+            Node child = tree.addNode(in[0]);
+            Node parent = tree.addNode(in[1]);
+            map.compute(parent, (k, v) -> {
+                if (v == null) {
+                    v = new ArrayList<>();
+                }
+                v.add(child);
+                return v;
+            });
+            incrementall(child, parent.lvl);
+        }
+
+        Map.Entry<String, Integer>[] result = getResult(tree, N);
+        Arrays.stream(result).forEach(e -> System.out.println(e.getKey() + " " + e.getValue()));
         fs.close();
     }
+
+    static int idx = 0;
 
     @DisplayName("{0}")
     @ParameterizedTest
     @MethodSource(value = "source")
     @Timeout(1)
-    void test(int[] in, int out) throws Exception {
-        assertEquals(out, getResult(in));
+    void test(String[] in, Map.Entry<String, Integer>[] out) throws Exception {
+        idx = 0;
+        map.clear();
+        assertArrayEquals(out, getResult(tree(in), in.length + 1));
+    }
+
+    static Map<Node, List<Node>> map = new HashMap<>();
+
+    static Tree tree(String[] in) {
+        Tree tree = new Tree(in.length);
+        for (String s : in) {
+            String[] split = s.split(" ");
+            Node child = tree.addNode(split[0]);
+            Node parent = tree.addNode(split[1]);
+            map.compute(parent, (k, v) -> {
+                if (v == null) {
+                    v = new ArrayList<>();
+                }
+                v.add(child);
+                return v;
+            });
+            incrementall(child, parent.lvl);
+        }
+        return tree;
+    }
+
+    private static void incrementall(Node child, int parentLvl) {
+        if (child == null) {
+            return;
+        }
+        child.incLvl(parentLvl + 1 - child.lvl);
+        List<Node> nodes = map.getOrDefault(child, List.of());
+        for(Node n : nodes) {
+            incrementall(n, child.lvl);
+        }
     }
 
     private static Stream<Arguments> source() {
         return Stream.of(
-                Arguments.of(new int[]{7, 3, 2, 1, 9, 5, 4, 6, 8, 0}, 8),
-                Arguments.of(new int[]{2, 1}, 1),
-                Arguments.of(new int[]{1, 2}, 1)
+                Arguments.of(new String[]{
+                                "Alexei Peter_I",
+                                "Anna Peter_I",
+                                "Elizabeth Peter_I",
+                                "Peter_II Alexei",
+                                "Peter_III Anna",
+                                "Paul_I Peter_III",
+                                "Alexander_I Paul_I",
+                                "Nicholaus_I Paul_I"},
+                        new Map.Entry[]{
+                                Map.entry("Alexander_I", 4),
+                                Map.entry("Alexei", 1),
+                                Map.entry("Anna", 1),
+                                Map.entry("Elizabeth", 1),
+                                Map.entry("Nicholaus_I", 4),
+                                Map.entry("Paul_I", 3),
+                                Map.entry("Peter_I", 0),
+                                Map.entry("Peter_II", 2),
+                                Map.entry("Peter_III", 2)
+                        }
+                ),
+                Arguments.of(new String[]{
+                                "AICHNG ZLNYXGO",
+                                "BDLHBJZWY BELAFXWA",
+                                "COXUC WVWNNC",
+                                "ELPPUINHJ BELAFXWA",
+                                "HIOSZOHQWG AICHNG",
+                                "UVRRAVHX BDLHBJZWY",
+                                "WVWNNC ELPPUINHJ",
+                                "YKYWCJBAX BDLHBJZWY",
+                                "ZLNYXGO BDLHBJZWY"},
+                        new Map.Entry[]{
+                                Map.entry("AICHNG", 3),
+                                Map.entry("BDLHBJZWY", 1),
+                                Map.entry("BELAFXWA", 0),
+                                Map.entry("COXUC", 3),
+                                Map.entry("ELPPUINHJ", 1),
+                                Map.entry("HIOSZOHQWG", 4),
+                                Map.entry("UVRRAVHX", 2),
+                                Map.entry("WVWNNC", 2),
+                                Map.entry("YKYWCJBAX", 2),
+                                Map.entry("ZLNYXGO", 2)
+                        }
+                )
         );
     }
 
+    private static Map.Entry<String, Integer>[] getResult(Tree tree, int size) {
+        Map.Entry[] res = new Map.Entry[size];
+        Node current = tree.root;
+        dfs(current, res);
+        return res;
+    }
 
-    private static int getResult(int[] in) {
-        Tree tree = new Tree(in.length);
-        for (int j = 0; j < in.length; j++) {
-            int i = in[j];
-            if (i == 0 && j == in.length - 1) {
-                break;
-            }
-            tree.addNode(i);
+    private static void dfs(Node node, Map.Entry<String, Integer>[] out) {
+        if (node == null) {
+            return;
         }
-        return tree.max2;
+        dfs(node.left, out);
+        out[idx++] = Map.entry(node.key, node.lvl);
+        dfs(node.right, out);
+    }
+
+    static class Node {
+        String key;
+        int idx;
+        Node left;
+        Node right;
+        int lvl = 0;
+
+        public Node(String key, int idx, Node left, Node right) {
+            this.key = key;
+            this.idx = idx;
+            this.left = left;
+            this.right = right;
+        }
+
+        public void incLvl(int parentLvl) {
+            lvl += parentLvl;
+        }
     }
 
     static class Tree {
-        Integer[][] elements;
-        Integer root;
+        List<Node> elements;
+        Node root;
         int currentIdx = 0;
-        Integer max;
-        Integer max2;
         //0 - index
         //1 - key
         //2 - left
@@ -83,74 +204,48 @@ public class C {
         //4 - lvl
 
         public Tree(int size) {
-            this.elements = new Integer[size][5];
-            for (int i = 0; i < size; i++) {
-                elements[i] = new Integer[]{i, null, null, null, null};
-            }
+            this.elements = new ArrayList<>(size);
         }
 
-        public void addNode(int key) {
+        public Node addNode(String key) {
             if (root == null) {
-                root = currentIdx;
-                elements[currentIdx][1] = key;
-                elements[currentIdx][4] = 1;
-                max = key;
+                Node element = new Node(key, currentIdx, null, null);
+                root = element;
+                elements.add(currentIdx, element);
                 currentIdx++;
+                return element;
             } else {
-                Integer parent = root;
+                Node parent = root;
+                Node newElement = null;
                 while (parent != null) {
-                    if (elements[parent][1] > key) {
-                        if (elements[parent][2] == null) {
-                            elements[currentIdx][1] = key;
-                            int curlvl = elements[parent][4] + 1;
-                            elements[currentIdx][4] = curlvl;
-                            elements[parent][2] = currentIdx;
+                    if (elements.get(parent.idx).key.compareTo(key) > 0) {
+                        if (elements.get(parent.idx).left == null) {
+                            Node newNode = new Node(key, currentIdx, null, null);
+                            elements.add(currentIdx, newNode);
+                            parent.left = newNode;
                             currentIdx++;
-                            if (max2 == null) {
-                                Integer temp = max;
-                                max = Math.max(max, key);
-                                max2 = Math.min(temp, key);
-                            } else {
-                                if (max < key) {
-                                    Integer temp = max;
-                                    max = key;
-                                    max2 = temp;
-                                } else if (max2 < key) {
-                                    max2 = key;
-                                }
-                            }
-                                break;
-                        } else {
-                            parent = elements[parent][2];
-                        }
-                    } else if (elements[parent][1] < key) {
-                        if (elements[parent][3] == null) {
-                            elements[currentIdx][1] = key;
-                            int curlvl = elements[parent][4] + 1;
-                            elements[currentIdx][4] = curlvl;
-                            elements[parent][3] = currentIdx;
-                            currentIdx++;
-                            if (max2 == null) {
-                                Integer temp = max;
-                                max = Math.max(max, key);
-                                max2 = Math.min(temp, key);
-                            } else {
-                                if (max < key) {
-                                    Integer temp = max;
-                                    max = key;
-                                    max2 = temp;
-                                } else if (max2 < key) {
-                                    max2 = key;
-                                }
-                            }
+                            newElement = newNode;
                             break;
                         } else {
-                            parent = elements[parent][3];
+                            parent = elements.get(parent.idx).left;
+                        }
+                    } else if (elements.get(parent.idx).key.compareTo(key) < 0) {
+                        if (elements.get(parent.idx).right == null) {
+                            Node newNode = new Node(key, currentIdx, null, null);
+                            elements.add(currentIdx, newNode);
+                            parent.right = newNode;
+                            currentIdx++;
+                            newElement = newNode;
+                            break;
+                        } else {
+                            parent = elements.get(parent.idx).right;
                         }
                     } else {
+                        newElement = elements.get(parent.idx);
                         break;
                     }
                 }
+                return newElement;
             }
         }
     }

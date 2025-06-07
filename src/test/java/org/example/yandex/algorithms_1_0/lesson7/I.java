@@ -116,7 +116,6 @@ public class I {
         String[] stSplit = row[1].split(":");
         int startTime = Integer.parseInt(stSplit[0]) * 60 + Integer.parseInt(stSplit[1]);
         events.add(new Event(startTime, 1, start, idx, false));
-//            left.add(start);
         int end = Integer.parseInt(row[2]);
         String[] endSplit = row[3].split(":");
         int endTime = Integer.parseInt(endSplit[0]) * 60 + Integer.parseInt(endSplit[1]);
@@ -124,13 +123,8 @@ public class I {
     }
 
     private static int getResult(List<Event> events) {
-//        if (!left.equals(right)) {
-//            return -1;
-//        }
-
         events.sort(Comparator.comparing(Event::val).thenComparing(Event::type));
         int count3 = 0;
-//        boolean[] busesActive = new boolean[in.length];
         int busesIdx = 0;
         Map<Integer, Integer> stations = new HashMap<>();
         for (int i = 0; i < events.size() * 3; i++) {
@@ -145,7 +139,6 @@ public class I {
                 } else {
                     busesIdx++;
                 }
-//                busesActive[event.idx] = true;
             } else if (event.type == -1 && !(i / events.size() < 1 && event.skipEnd)) {
                 if (!stations.containsKey(event.city)) {
                     stations.put(event.city, 1);
@@ -156,19 +149,6 @@ public class I {
         }
         if (busesIdx == count3) return busesIdx;
         else return -1;
-    }
-
-    private static List<Event> getEvents(String[][] in) {
-        List<Event> events = new ArrayList<>(in.length);
-        int idx = 0;
-//        Set<Integer> left = new HashSet<>();
-//        Set<Integer> right = new HashSet<>();
-        for (String[] row : in) {
-
-//            right.add(end);
-            idx++;
-        }
-        return events;
     }
 
     static class Event {

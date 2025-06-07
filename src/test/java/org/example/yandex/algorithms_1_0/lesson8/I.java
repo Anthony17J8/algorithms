@@ -1,3 +1,4 @@
+
 /*
    Copyright 2020 Russian Post
    <p>
@@ -8,7 +9,7 @@
    Legal use of the software provides receipt of a license from the right holder only.
  */
 
-package org.example.yandex.algorithms_1_0.lesson7;
+package org.example.yandex.algorithms_1_0.lesson8;
 
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Timeout;
@@ -25,224 +26,215 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Comparator;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.Random;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 
-public class H {
+public class I {
     static TestHelper fs = new TestHelper();
-    static int start = -1, end = 1, point = 0;
     static int seed = 2025;
-    static String WRONG = "Wrong Answer", ACCEPTED = "Accepted";
 
     public static void main(String[] args) throws Exception {
-        int K = fs.nextInt();
-        int num = K;
-        String[] res = new String[K];
+        int N = fs.nextInt();
         int idx = 0;
-        while (num-- > 0) {
-            int[] in = fs.readStringAsIntArray();
-            res[idx++] = getResult(in);
+        Tree tree = new Tree(N);
+        while (idx++ < N - 1) {
+            String[] in = fs.readStringAsStringArray();
+            tree.addNode(in[0]);
+            tree.addNode(in[1]);
+            Node child = tree.addNode(in[0]);
+            Node parent = tree.addNode(in[1]);
+            map.put(child, parent);
+            incrementall(parent, child.children);
         }
-        fs.writeAll(res, '\n');
-        fs.close();
 
+        Map.Entry<String, Integer>[] result = getResult(tree, N);
+        Arrays.stream(result).forEach(e -> System.out.println(e.getKey() + " " + e.getValue()));
+        fs.close();
     }
+
+    static int idx = 0;
 
     @DisplayName("{0}")
     @ParameterizedTest
     @MethodSource(value = "source")
-    @Timeout(4)
-    void test(int[] in, String out) throws Exception {
-        assertEquals(out, getResult(in));
+    @Timeout(1)
+    void test(String[] in, Map.Entry<String, Integer>[] out) throws Exception {
+        idx = 0;
+        map.clear();
+        assertArrayEquals(out, getResult(tree(in), in.length + 1));
+    }
+
+    static Map<Node, Node> map = new HashMap<>();
+
+    static Tree tree(String[] in) {
+        Tree tree = new Tree(in.length);
+        for (String s : in) {
+            String[] split = s.split(" ");
+            Node child = tree.addNode(split[0]);
+            Node parent = tree.addNode(split[1]);
+            map.put(child, parent);
+            incrementall(parent, child.children);
+        }
+        return tree;
+    }
+
+    private static void incrementall(Node parent, int childrenNum) {
+        Node cur = parent;
+        while (cur != null) {
+            cur.incChildren(childrenNum);
+            cur = map.get(cur);
+        }
     }
 
     private static Stream<Arguments> source() {
-        int[] ints = TestHelper.generateRandom(20001, 2025);
-        ints[0] = 10000;
-        ints[1] = 0;
-        ints[2] = 10000;
         return Stream.of(
-                Arguments.of(new int[]{3, 0, 3000, 2500, 7000, 2700, 10000}, WRONG),
-                Arguments.of(new int[]{2, 0, 3000, 2700, 10000}, ACCEPTED),
-                Arguments.of(new int[]{3, 0, 3000, 3500, 5000, 4000, 10000}, WRONG),
-                Arguments.of(new int[]{3, 0, 3000, 3000, 5000, 4000, 9999}, WRONG),
-                Arguments.of(new int[]{3, 0, 3000, 3500, 5000, 4000, 10000}, WRONG),
-                Arguments.of(new int[]{2, 0, 5000, 5000, 10000}, ACCEPTED),
-                Arguments.of(new int[]{3, 10, 3000, 3000, 5000, 4000, 10000}, WRONG),
-                Arguments.of(new int[]{3, 1, 3000, 3000, 5000, 4000, 10000}, WRONG),
-                Arguments.of(new int[]{1, 0, 1000}, WRONG),
-                Arguments.of(new int[]{1, 0, 10000}, ACCEPTED),
-                Arguments.of(new int[]{2, 0, 3000, 0, 10000}, WRONG),
-                Arguments.of(new int[]{2, 0, 10000, 3000, 10000}, WRONG),
-                Arguments.of(ints, WRONG)
+                Arguments.of(new String[]{
+                                "Alexei Peter_I",
+                                "Anna Peter_I",
+                                "Elizabeth Peter_I",
+                                "Peter_II Alexei",
+                                "Peter_III Anna",
+                                "Paul_I Peter_III",
+                                "Alexander_I Paul_I",
+                                "Nicholaus_I Paul_I"},
+                        new Map.Entry[]{
+                                Map.entry("Alexander_I", 0),
+                                Map.entry("Alexei", 1),
+                                Map.entry("Anna", 4),
+                                Map.entry("Elizabeth", 0),
+                                Map.entry("Nicholaus_I", 0),
+                                Map.entry("Paul_I", 2),
+                                Map.entry("Peter_I", 8),
+                                Map.entry("Peter_II", 0),
+                                Map.entry("Peter_III", 3)
+                        }
+                ),
+                Arguments.of(new String[]{
+                                "AICHNG ZLNYXGO",
+                                "BDLHBJZWY BELAFXWA",
+                                "COXUC WVWNNC",
+                                "ELPPUINHJ BELAFXWA",
+                                "HIOSZOHQWG AICHNG",
+                                "UVRRAVHX BDLHBJZWY",
+                                "WVWNNC ELPPUINHJ",
+                                "YKYWCJBAX BDLHBJZWY",
+                                "ZLNYXGO BDLHBJZWY"},
+                        new Map.Entry[]{
+                                Map.entry("AICHNG", 1),
+                                Map.entry("BDLHBJZWY", 5),
+                                Map.entry("BELAFXWA", 9),
+                                Map.entry("COXUC", 0),
+                                Map.entry("ELPPUINHJ", 2),
+                                Map.entry("HIOSZOHQWG", 0),
+                                Map.entry("UVRRAVHX", 8),
+                                Map.entry("WVWNNC", 1),
+                                Map.entry("YKYWCJBAX", 0),
+                                Map.entry("ZLNYXGO", 2)
+                        }
+                )
         );
     }
 
-    private static String getResult(int[] in) {
-        List<Event> events = new ArrayList<>();
-        int idx = 0;
-        int pow = 1;
-        while (idx < in[0]) {
-            events.add(new Event(in[pow], start, idx, in[pow + 1] - in[pow]));
-            events.add(new Event(in[pow + 1], end, idx, in[pow] - in[pow + 1]));
-            idx++;
-            pow += 2;
-        }
-
-        events.sort(Comparator.comparing(Event::val).thenComparing(Event::type)
-                .thenComparing(Comparator.comparing(Event::len).reversed()));
-
-        boolean isSecured = checkSecurity(events);
-        if (!isSecured) {
-            return WRONG;
-        }
-
-        return checkSecurityFast(events) ? ACCEPTED : WRONG;
+    private static Map.Entry<String, Integer>[] getResult(Tree tree, int size) {
+        Map.Entry[] res = new Map.Entry[size];
+        Node current = tree.root;
+        dfs(current, res);
+        return res;
     }
 
-    private static boolean checkSecurity(List<Event> events) {
-        Integer st = null;
-        Integer en = null;
-        int now = 0;
-        boolean result = true;
-        for (Event event : events) {
-            if (event.type == start) {
-                if (now == 0 && en != null && en != 10000) {
-                    result = false;
-                    break;
-                }
-                now += 1;
-                if (st == null) {
-                    st = event.val;
-                } else {
-                    st = Math.min(st, event.val);
-                }
-            } else if (event.type == end) {
-                now -= 1;
-                if (en == null) {
-                    en = event.val;
-                } else {
-                    en = Math.max(en, event.val);
-                }
-            }
+    private static void dfs(Node node, Map.Entry<String, Integer>[] out) {
+        if (node == null) {
+            return;
         }
-        if (en != null && st != null && en - st != 10000) {
-            result = false;
-        } else if (st == null) {
-            result = false;
-        }
-        return result;
+        dfs(node.left, out);
+        out[idx++] = Map.entry(node.key, node.children);
+        dfs(node.right, out);
     }
 
-    private static boolean checkSecurity(List<Event> events, int skipId) {
-        Integer st = null;
-        Integer en = null;
-        int now = 0;
-        boolean result = true;
-        for (Event event : events) {
-            if (event.idx == skipId) {
-                continue;
-            }
-            if (event.type == start) {
-                if (now == 0 && en != null && en != 10000) {
-                    result = false;
-                    break;
-                }
-                now += 1;
-                if (st == null) {
-                    st = event.val;
-                } else {
-                    st = Math.min(st, event.val);
-                }
-            } else if (event.type == end) {
-                now -= 1;
-                if (en == null) {
-                    en = event.val;
-                } else {
-                    en = Math.max(en, event.val);
-                }
-            }
+    static class Node {
+        String key;
+        int idx;
+        Node left;
+        Node right;
+        int children = 0;
+
+        public Node(String key, int idx, Node left, Node right) {
+            this.key = key;
+            this.idx = idx;
+            this.left = left;
+            this.right = right;
         }
-        if (en != null && st != null && en - st != 10000) {
-            result = false;
-        } else if (st == null) {
-            result = false;
+
+        public void incChildren(int childChildren) {
+            children += childChildren + 1;
         }
-        return result;
     }
 
-    private static boolean checkSecurityFast(List<Event> events) {
-        boolean result = true;
-        int current = 0;
-        for (int i = 0; i < events.size(); i++) {
-            Event event = events.get(i);
-            if (event.type == end) {
-                current--;
-            }
-            if (event.type == start) {
-                if (current > 0) {
-                    boolean isSecured = checkOne(events, i, event.idx, current);
-                    if (isSecured) {
-                        result = false;
+    static class Tree {
+        List<Node> elements;
+        Node root;
+        int currentIdx = 0;
+        //0 - index
+        //1 - key
+        //2 - left
+        //3 - right
+        //4 - lvl
+
+        public Tree(int size) {
+            this.elements = new ArrayList<>(size);
+        }
+
+        public Node addNode(String key) {
+            if (root == null) {
+                Node element = new Node(key, currentIdx, null, null);
+                root = element;
+                elements.add(currentIdx, element);
+                currentIdx++;
+                return element;
+            } else {
+                Node parent = root;
+                Node newElement = null;
+                while (parent != null) {
+                    if (elements.get(parent.idx).key.compareTo(key) > 0) {
+                        if (elements.get(parent.idx).left == null) {
+                            Node newNode = new Node(key, currentIdx, null, null);
+                            elements.add(currentIdx, newNode);
+                            parent.left = newNode;
+                            currentIdx++;
+                            newElement = newNode;
+                            break;
+                        } else {
+                            parent = elements.get(parent.idx).left;
+                        }
+                    } else if (elements.get(parent.idx).key.compareTo(key) < 0) {
+                        if (elements.get(parent.idx).right == null) {
+                            Node newNode = new Node(key, currentIdx, null, null);
+                            elements.add(currentIdx, newNode);
+                            parent.right = newNode;
+                            currentIdx++;
+                            newElement = newNode;
+                            break;
+                        } else {
+                            parent = elements.get(parent.idx).right;
+                        }
+                    } else {
+                        newElement = elements.get(parent.idx);
                         break;
                     }
                 }
-                current++;
+                return newElement;
             }
         }
-        return result;
     }
 
-    private static boolean checkOne(List<Event> events, int i, int idx, int current) {
-        boolean isSecured = true;
-        for (int j = i + 1; events.get(j).idx != idx; j++) {
-            Event event = events.get(j);
-            if (event.type == end) {
-                current--;
-            }
-            if (event.type == start) {
-                current++;
-            }
-            if (current == 0) {
-                isSecured = false;
-                break;
-            }
-        }
-        return isSecured;
-    }
-
-    static class Event {
-        int val;
-        int type;
-        int idx;
-        int len;
-
-        public Event(int val, int type, int idx, int len) {
-            this.type = type;
-            this.idx = idx;
-            this.val = val;
-            this.len = len;
-        }
-
-        int type() {
-            return type;
-        }
-
-        int val() {
-            return val;
-        }
-
-        int len() {
-            return len;
-        }
-    }
 
     private static class TestHelper {
         BufferedReader in;
@@ -330,15 +322,6 @@ public class H {
         void writeOneByOne(char[][] in) throws IOException {
             for (int i = 0; i < in.length; i++) {
                 for (int j = 0; j < in[0].length; j++) {
-                    out.write(in[i][j] + " ");
-                }
-                out.write("\n");
-            }
-        }
-
-        void writeOneByOne(int[][] in) throws IOException {
-            for (int i = 0; i < in.length; i++) {
-                for (int j = 0; j < in[i].length; j++) {
                     out.write(in[i][j] + " ");
                 }
                 out.write("\n");
@@ -444,7 +427,7 @@ public class H {
 
         public static int[] generateRandom(int size, int seed) {
             Random random = new Random(seed);
-            return random.ints(0, 10000).limit(size).toArray();
+            return random.ints(1, 10).limit(size).toArray();
         }
 
         public static int[][] generateTwoDimensionalRandom(int row, int col) {
