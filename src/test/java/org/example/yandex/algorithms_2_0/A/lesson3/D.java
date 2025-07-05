@@ -25,30 +25,24 @@ import java.io.OutputStreamWriter;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Arrays;
-import java.util.HashSet;
 import java.util.Objects;
 import java.util.Random;
-import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
-public class C {
+// TODO:
+public class D {
     static TestHelper fs = new TestHelper();
     static int seed = 2025;
 
     public static void main(String[] args) throws Exception {
-        int[] NK = fs.readStringAsIntArray();
-        int N = NK[0];
-        int K = NK[1];
-        int idx = 0;
-        int[][] n = new int[K][2];
-        while (K-- > 0) {
-            n[idx++] = fs.readStringAsIntArray();
-        }
-        fs.write(getResult(n, N));
+        int n = fs.nextInt();
+        int[] cp = fs.readStringAsIntArray();
+        int[] vals = fs.readStringAsIntArray();
+        fs.write(getResult(cp, vals));
         fs.close();
     }
 
@@ -56,43 +50,54 @@ public class C {
     @ParameterizedTest
     @MethodSource(value = "source")
     @Timeout(1)
-    void test(int[][] in, int N, int out) throws Exception {
-        assertEquals(out, getResult(in, N));
+    void test(int[] cp, int[] vals, int out) throws Exception {
+        assertEquals(out, getResult(cp, vals));
     }
 
 
     private static Stream<Arguments> source() {
         return Stream.of(
-                Arguments.of(new int[][]{
-                        {2, 3},
-                        {3, 5},
-                        {9, 8}
-                }, 19, 8),
-                Arguments.of(new int[][]{
-                        {1, 2},
-                        {2, 2},
-                }, 5, 5),
-                Arguments.of(new int[][]{
-                        {1, 1},
-                }, 1000, 715)
+                Arguments.of(new int[]{0, 0, 0, 0, 0, 0}, new int[]{2, 3, 4, 5, 6}, 1),
+                Arguments.of(new int[]{1, 2, 2, 2, 2, 2}, new int[]{2, 4, 5, 6, 7}, 1),
+                Arguments.of(new int[]{0, 0, 0, 0, 0, 0, 0, 0}, new int[]{1, 1, 2, 2, 3, 3, 4}, 1),
+                Arguments.of(new int[]{0, 0}, new int[]{100}, 1),
+                Arguments.of(new int[]{17, 100, 0}, new int[]{2, 2}, 101),
+                Arguments.of(new int[]{17, 100, 0}, new int[]{2, 99}, 1),
+                Arguments.of(new int[]{17, 100, 100}, new int[]{1, 99}, 1),
+                Arguments.of(new int[]{17, 100, 100}, new int[]{99, 99}, 1),
+                Arguments.of(new int[]{8, 3, 12, 5, 0, 9}, new int[]{2, 1, 3, 1, 4}, 2),
+                Arguments.of(new int[]{8, 3, 12, 5, 0, 9}, new int[]{10, 11, 12, 9, 8}, 4),
+                Arguments.of(new int[]{1, 3, 2, 1}, new int[]{2, 4, 2}, 3),
+                Arguments.of(new int[]{5, 4, 3, 0}, new int[]{4, 5, 6}, 1),
+                Arguments.of(new int[]{5, 4, 9, 15}, new int[]{1, 9, 9}, 1),
+                Arguments.of(new int[]{5, 4, 9, 15}, new int[]{2, 9, 9}, 1),
+                Arguments.of(new int[]{5, 4, 9, 15}, new int[]{2, 8, 9}, 1),
+                Arguments.of(new int[]{5, 4, 9, 15}, new int[]{1, 8, 9}, 1),
+                Arguments.of(new int[]{5, 4, 15, 15}, new int[]{1, 12, 2}, 1),
+                Arguments.of(new int[]{6, 7, 3, 4}, new int[]{1, 2, 3}, 1),
+                Arguments.of(new int[]{6, 7, 3, 4}, new int[]{2, 2, 3}, 1),
+                Arguments.of(new int[]{6, 7, 3, 4}, new int[]{2, 2, 10}, 4),
+                Arguments.of(new int[]{0, 0, 0, 0}, new int[]{2, 81, 90}, 1),
+                Arguments.of(new int[]{0, 0, 0, 0, 0, 0, 0, 0}, new int[]{1, 1, 2, 2, 3, 3, 4}, 1),
+                Arguments.of(new int[]{9, 9, 7, 10}, new int[]{1, 1, 3}, 2)
         );
     }
 
-    private static int getResult(int[][] arr, int n) {
-        Set<Integer> set = new HashSet<>();
-        for (int[] nums : arr) {
-            int a = nums[0];
-            int b = nums[1];
-            int sum = a;
-            while (sum <= n) {
-                if (sum % 7 != 0 && (sum + 1) % 7 != 0) {
-                    set.add(sum);
-                }
-                sum += b;
+    private static int getResult(int[] cp, int[] vals) {
+        return 0;
+    }
+
+    private static int checkResult(int[] cp, int target) {
+        int result = 0;
+        for (int i = 0; i < cp.length - 1; i++) {
+            int point = cp[i];
+            if (point < target) {
+                result++;
             }
         }
-        return set.size();
+        return result;
     }
+
 
     private static class TestHelper {
         BufferedReader in;

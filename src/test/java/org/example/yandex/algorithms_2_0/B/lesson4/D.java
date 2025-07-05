@@ -9,7 +9,7 @@
    Legal use of the software provides receipt of a license from the right holder only.
  */
 
-package org.example.yandex.algorithms_2_0.A.lesson3;
+package org.example.yandex.algorithms_2_0.B.lesson4;
 
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Timeout;
@@ -25,30 +25,66 @@ import java.io.OutputStreamWriter;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Arrays;
-import java.util.HashSet;
+import java.util.Collection;
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.Random;
-import java.util.Set;
+import java.util.TreeMap;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-
-public class C {
+public class D {
     static TestHelper fs = new TestHelper();
-    static int seed = 2025;
+    static long seed = System.currentTimeMillis();
 
     public static void main(String[] args) throws Exception {
-        int[] NK = fs.readStringAsIntArray();
-        int N = NK[0];
-        int K = NK[1];
-        int idx = 0;
-        int[][] n = new int[K][2];
-        while (K-- > 0) {
-            n[idx++] = fs.readStringAsIntArray();
+        LinkedHashMap<String, Long> m = new LinkedHashMap<>();
+        Map<String, Long> hash = new HashMap<>();
+        TreeMap<Map.Entry<Double, Long>, String> t = new TreeMap<>(
+                Map.Entry.<Double, Long>comparingByKey().reversed().thenComparing(Map.Entry.comparingByValue()));
+
+//        TreeMap<>
+        long total = 0;
+        List<String> strings = fs.readFromFile().collect(Collectors.toList());
+        for (String str : strings) {
+            String[] split = str.split(" ");
+            long num = Long.parseLong(split[split.length - 1]);
+            String part = str.replaceFirst("\\d*$", "").trim();
+            total += num;
+            m.compute(part, (k, v) -> v == null ? num : v + num);
         }
-        fs.write(getResult(n, N));
+
+        long sum = 0;
+        double avg = total / 450.0;
+        for (Map.Entry<String, Long> entry : m.entrySet()) {
+            long v = (long) (entry.getValue() / avg);
+            sum += v;
+            double mod = entry.getValue() % avg;
+            t.put(Map.entry(mod, entry.getValue()), entry.getKey());
+            hash.put(entry.getKey(), v);
+        }
+        long diff = 450 - sum;
+
+        Collection<String> values = t.values();
+        Iterator<String> iterator = values.iterator();
+        while (iterator.hasNext()) {
+            if (diff > 0) {
+                String next = iterator.next();
+                hash.computeIfPresent(next, (k, v) -> v + 1);
+                diff--;
+            } else {
+                break;
+            }
+        }
+        for (Map.Entry<String, Long> entry : m.entrySet()) {
+            fs.write(entry.getKey() + " " + hash.get(entry.getKey()) + "\n");
+        }
+
         fs.close();
     }
 
@@ -56,42 +92,25 @@ public class C {
     @ParameterizedTest
     @MethodSource(value = "source")
     @Timeout(1)
-    void test(int[][] in, int N, int out) throws Exception {
-        assertEquals(out, getResult(in, N));
-    }
+    void test(long[][] in, long[][] out) throws Exception {
 
+    }
 
     private static Stream<Arguments> source() {
         return Stream.of(
-                Arguments.of(new int[][]{
-                        {2, 3},
-                        {3, 5},
-                        {9, 8}
-                }, 19, 8),
-                Arguments.of(new int[][]{
-                        {1, 2},
-                        {2, 2},
-                }, 5, 5),
-                Arguments.of(new int[][]{
-                        {1, 1},
-                }, 1000, 715)
+                Arguments.of(
+                        new long[][]{
+                                {1, 5}, {10, -5}, {1, 10}, {4, -2}, {4, 3}, {4, 1}, {4, 0}
+                        },
+                        new long[][]{
+                                {1, 15}, {4, 2}, {10, -5}
+                        }
+                )
         );
     }
 
-    private static int getResult(int[][] arr, int n) {
-        Set<Integer> set = new HashSet<>();
-        for (int[] nums : arr) {
-            int a = nums[0];
-            int b = nums[1];
-            int sum = a;
-            while (sum <= n) {
-                if (sum % 7 != 0 && (sum + 1) % 7 != 0) {
-                    set.add(sum);
-                }
-                sum += b;
-            }
-        }
-        return set.size();
+    private static void getResult() {
+
     }
 
     private static class TestHelper {
@@ -108,16 +127,12 @@ public class C {
         }
 
         Stream<String> readFromFile() throws IOException {
-            return Files.lines(Path.of("src/test/java/org/example/yandex/algorithms_1_0/lesson4/input.txt"));
+            return Files.lines(Path.of("src/test/java/org/example/yandex/algorithms_2_0/B/lesson4/1.txt"));
 //            return Files.lines(Path.of("input.txt"));
         }
 
         void write(String s) throws IOException {
             out.write(s);
-        }
-
-        <T> void write(T obj) throws IOException {
-            out.write(obj.toString());
         }
 
         void write(long l) throws IOException {
@@ -131,6 +146,18 @@ public class C {
         void writeAll(long[] i) throws IOException {
             for (long el : i) {
                 out.write(el + " ");
+            }
+        }
+
+        <T> void writeAll(Iterable<T> l) throws IOException {
+            for (T el : l) {
+                out.write(el + " ");
+            }
+        }
+
+        <T> void writeAll(Iterable<T> l, char sep) throws IOException {
+            for (T el : l) {
+                out.write(el + "" + sep);
             }
         }
 
@@ -152,26 +179,6 @@ public class C {
             }
         }
 
-        <T> void writeAll(Iterable<T> it) {
-            it.forEach(o -> {
-                try {
-                    write(o);
-                } catch (IOException e) {
-                    throw new RuntimeException(e);
-                }
-            });
-        }
-
-        <T> void writeAll(Iterable<T> it, char sep) {
-            it.forEach(o -> {
-                try {
-                    write(o + "" + sep);
-                } catch (IOException e) {
-                    throw new RuntimeException(e);
-                }
-            });
-        }
-
         void writeAll(String[] w) throws IOException {
             for (String b : w) {
                 out.write(b + " ");
@@ -191,6 +198,15 @@ public class C {
         }
 
         void writeOneByOne(char[][] in) throws IOException {
+            for (int i = 0; i < in.length; i++) {
+                for (int j = 0; j < in[0].length; j++) {
+                    out.write(in[i][j] + " ");
+                }
+                out.write("\n");
+            }
+        }
+
+        void writeOneByOne(long[][] in) throws IOException {
             for (int i = 0; i < in.length; i++) {
                 for (int j = 0; j < in[0].length; j++) {
                     out.write(in[i][j] + " ");

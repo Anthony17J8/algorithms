@@ -9,7 +9,7 @@
    Legal use of the software provides receipt of a license from the right holder only.
  */
 
-package org.example.yandex.algorithms_2_0.A.lesson3;
+package org.example.yandex.algorithms_2_0.B.lesson4;
 
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Timeout;
@@ -25,30 +25,34 @@ import java.io.OutputStreamWriter;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Arrays;
-import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.Random;
-import java.util.Set;
+import java.util.TreeMap;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 
-public class C {
+public class B {
     static TestHelper fs = new TestHelper();
-    static int seed = 2025;
+    static long seed = System.currentTimeMillis();
 
     public static void main(String[] args) throws Exception {
-        int[] NK = fs.readStringAsIntArray();
-        int N = NK[0];
-        int K = NK[1];
-        int idx = 0;
-        int[][] n = new int[K][2];
-        while (K-- > 0) {
-            n[idx++] = fs.readStringAsIntArray();
+        TreeMap<String, Integer> m = new TreeMap<>();
+        fs.readFromFile()
+                .forEach(line -> {
+                    String[] s = line.split(" ");
+                    String candidate = s[0];
+                    int count = Integer.parseInt(s[1]);
+                    m.compute(candidate, (k, v) -> v == null ? count : v + count);
+                });
+        for (Map.Entry<String, Integer> e : m.entrySet()) {
+            fs.write(e.getKey() + " " + e.getValue());
+            fs.newLine();
         }
-        fs.write(getResult(n, N));
         fs.close();
     }
 
@@ -56,42 +60,41 @@ public class C {
     @ParameterizedTest
     @MethodSource(value = "source")
     @Timeout(1)
-    void test(int[][] in, int N, int out) throws Exception {
-        assertEquals(out, getResult(in, N));
+    void test(long[][] in, long[][] out) throws Exception {
+        for (int i = 0; i < out.length; i++) {
+            assertArrayEquals(out[i], getResult(in)[i]);
+        }
     }
 
 
     private static Stream<Arguments> source() {
         return Stream.of(
-                Arguments.of(new int[][]{
-                        {2, 3},
-                        {3, 5},
-                        {9, 8}
-                }, 19, 8),
-                Arguments.of(new int[][]{
-                        {1, 2},
-                        {2, 2},
-                }, 5, 5),
-                Arguments.of(new int[][]{
-                        {1, 1},
-                }, 1000, 715)
+                Arguments.of(
+                        new long[][]{
+                                {1, 5}, {10, -5}, {1, 10}, {4, -2}, {4, 3}, {4, 1}, {4, 0}
+                        },
+                        new long[][]{
+                                {1, 15}, {4, 2}, {10, -5}
+                        }
+                )
         );
     }
 
-    private static int getResult(int[][] arr, int n) {
-        Set<Integer> set = new HashSet<>();
-        for (int[] nums : arr) {
-            int a = nums[0];
-            int b = nums[1];
-            int sum = a;
-            while (sum <= n) {
-                if (sum % 7 != 0 && (sum + 1) % 7 != 0) {
-                    set.add(sum);
-                }
-                sum += b;
-            }
+    private static long[][] getResult(long[][] in) {
+        TreeMap<Long, Long> m = new TreeMap<>();
+        for (long[] l : in) {
+            long color = l[0];
+            long total = l[1];
+            m.compute(color, (k, v) -> v == null ? total : v + total);
         }
-        return set.size();
+        long[][] result = new long[m.size()][2];
+        int i = 0;
+        for (Map.Entry<Long, Long> entry : m.entrySet()) {
+            result[i][0] = entry.getKey();
+            result[i][1] = entry.getValue();
+            i++;
+        }
+        return result;
     }
 
     private static class TestHelper {
@@ -108,16 +111,12 @@ public class C {
         }
 
         Stream<String> readFromFile() throws IOException {
-            return Files.lines(Path.of("src/test/java/org/example/yandex/algorithms_1_0/lesson4/input.txt"));
+            return Files.lines(Path.of("src/test/java/org/example/yandex/algorithms_2_0/B/lesson4/1.txt"));
 //            return Files.lines(Path.of("input.txt"));
         }
 
         void write(String s) throws IOException {
             out.write(s);
-        }
-
-        <T> void write(T obj) throws IOException {
-            out.write(obj.toString());
         }
 
         void write(long l) throws IOException {
@@ -130,6 +129,12 @@ public class C {
 
         void writeAll(long[] i) throws IOException {
             for (long el : i) {
+                out.write(el + " ");
+            }
+        }
+
+        <T> void writeAll(List<T> l) throws IOException {
+            for (T el : l) {
                 out.write(el + " ");
             }
         }
@@ -152,20 +157,11 @@ public class C {
             }
         }
 
-        <T> void writeAll(Iterable<T> it) {
+        void writeAll(Iterable<String> it) {
             it.forEach(o -> {
                 try {
+                    newLine();
                     write(o);
-                } catch (IOException e) {
-                    throw new RuntimeException(e);
-                }
-            });
-        }
-
-        <T> void writeAll(Iterable<T> it, char sep) {
-            it.forEach(o -> {
-                try {
-                    write(o + "" + sep);
                 } catch (IOException e) {
                     throw new RuntimeException(e);
                 }
@@ -191,6 +187,15 @@ public class C {
         }
 
         void writeOneByOne(char[][] in) throws IOException {
+            for (int i = 0; i < in.length; i++) {
+                for (int j = 0; j < in[0].length; j++) {
+                    out.write(in[i][j] + " ");
+                }
+                out.write("\n");
+            }
+        }
+
+        void writeOneByOne(long[][] in) throws IOException {
             for (int i = 0; i < in.length; i++) {
                 for (int j = 0; j < in[0].length; j++) {
                     out.write(in[i][j] + " ");
